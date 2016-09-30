@@ -1,4 +1,12 @@
+resource_registry:  
+    "OS::Nova::Server::Disk": "disk.yaml"
+    "OS::Nova::Server::Cpu": "cpu.yaml"
+    "OS::Nova::Server::Ram": "ram.yaml"
 parameters:
   num_of_slices: 2
   instance_type: m1.tiny
   image_id: 8a224fc9-b5cd-45b5-8332-41234ce2268d
+  availability_zone: 
+  scaling_size: 3
+  availability_zone: nova
+  volume_size: 1
