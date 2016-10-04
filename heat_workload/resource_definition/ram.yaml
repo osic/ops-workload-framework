@@ -1,4 +1,4 @@
-heat_template_version: 2014-10-16  
+heat_template_version: 2014-10-16
 description: RAM intensive resource.
 
 parameters:
@@ -16,14 +16,12 @@ parameters:
     type: string
     label: Image ID
     description: Image to be used for compute instance
-    constraints:
-      - custom_constraint: glance.image
+    default: 80245de9-cb3c-4f61-ac84-e0f800055cf5
   instance_type:
     type: string
     label: Instance Type
     description: Type of instance (flavor) to be used
-    constraints:
-      - custom_constraint: nova.flavor
+    default: m1.tiny
 resources:
   nova_server:
     type: OS::Nova::Server
@@ -41,5 +39,5 @@ resources:
     type: OS::Cinder::VolumeAttachment
     properties:
       volume_id: { get_resource: cinder_volume }
-      instance_uuid: { get_resource: nova_instance }
+      instance_uuid: { get_resource: nova_server }
       mountpoint: /dev/vdc

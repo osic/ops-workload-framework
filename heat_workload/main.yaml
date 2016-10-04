@@ -2,11 +2,28 @@ heat_template_version: 2013-05-23
 description: Template to deploy a slice of instances with parameters.
 
 parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: 80245de9-cb3c-4f61-ac84-e0f800055cf5
+  instance_type:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    default: m1.tiny
   num_of_slices:
     type: number
     label: Number of Slices
     description: Number of Slices to be deployed
-    default: 1
     constraints:
       - range: {min: 1}
   scaling_size:
@@ -50,14 +67,14 @@ resources:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: group-disk }
       cooldown: 60
-      scaling_adjustment: 1 
+      scaling_adjustment: 1
   scaleup_policy_cpu:
     type: OS::Heat::ScalingPolicy
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: group-cpu }
       cooldown: 60
-      scaling_adjustment: 1   
+      scaling_adjustment: 1
   scaleup_policy_ram:
     type: OS::Heat::ScalingPolicy
     properties:
