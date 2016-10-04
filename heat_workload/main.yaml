@@ -65,15 +65,22 @@ resources:
       auto_scaling_group_id: { get_resource: group-ram }
       cooldown: 60
       scaling_adjustment: 1
-  cpu_alarm_high:
-    type: OS::Ceilometer::Alarm
-    properties:
-      description: Scale-up the slice if the average CPU > 50% for 1 minute
-      meter_name: cpu_util
-      statistic: avg
-      period: 60
-      evaluation_periods: 1
-      threshold: 50
-      alarm_actions:
-        - {get_attr: [scaleup_policy_cpu, alarm_url]}
-      comparison_operator: gt
+outputs:
+  scale_up_url_disk:
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+    value: {get_attr: [scaleup_policy_disk, alarm_url]}
+  scale_up_url_ram:
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+    value: {get_attr: [scaleup_policy_ram, alarm_url]}
+  scale_up_url_cpu:
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+    value: {get_attr: [scaleup_policy_cpu, alarm_url]}
