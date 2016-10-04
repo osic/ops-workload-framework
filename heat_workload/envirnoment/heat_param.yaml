@@ -1,0 +1,4 @@
+parameters:
+  num_of_slices: 2
+  instance_type: m1.tiny
+  image_id: 8a224fc9-b5cd-45b5-8332-41234ce2268d

@@ -1,0 +1,44 @@
+heat_template_version: 2013-05-23
+description: Template to deploy a slice of instances with parameters.
+
+parameters:
+  num_of_slices:
+    type: number
+    label: Number of Slices
+    description: Number of Slices to be deployed
+    default: 1
+    constraints:
+      - range: {min: 1}
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    constraints:
+      - custom_constraint: glance.image
+  instance_type:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    constraints:
+      - custom_constraint: nova.flavor
+resources:
+ disk-vm:
+  type: OS::Heat::ResourceGroup
+  properties:
+    count: { get_param: num_of_slices }
+    resource_def:
+      type: OS::Nova::Server
+      properties:
+        name: disk-%index%
+        image: { get_param: image_id }
+        flavor: { get_param: instance_type }
+ cpu-bfv1:
+  type: OS::Heat::ResourceGroup
+  properties:
+    count: { get_param: num_of_slices }
+    resource_def:
+      type: OS::Nova::Server
+      properties:
+        name: cpu-%index%
+        image: { get_param: image_id }
+        flavor: { get_param: instance_type }
