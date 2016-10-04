@@ -1,7 +1,7 @@
 resource_registry:  
-    "OS::Nova::Server::Disk": "disk.yaml"
-    "OS::Nova::Server::Cpu": "cpu.yaml"
-    "OS::Nova::Server::Ram": "ram.yaml"
+  "OS::Nova::Server::Disk": "disk.yaml"
+  "OS::Nova::Server::Cpu": "cpu.yaml"
+  "OS::Nova::Server::Ram": "ram.yaml"
 parameters:
   num_of_slices: 2
   instance_type: m1.tiny
