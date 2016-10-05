@@ -3,9 +3,10 @@ resource_registry:
   "OS::Nova::Server::Cpu": "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
   "OS::Nova::Server::Ram": "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
 parameters:
-  "num_of_slices": 2
-  "instance_type": "m1.tiny"
-  "image_id": "80245de9-cb3c-4f61-ac84-e0f800055cf5"
+  "num_of_slices": 1
+  "instance_type": "m1.small"
+  "image_id": "8405d07e-25c9-449d-a908-46bded58000b"
   "scaling_size": 8
   "availability_zone": "nova"
   "volume_size": 1
+  "network": "5c4d3f44-e28d-46dc-b52a-53a5844ad804"

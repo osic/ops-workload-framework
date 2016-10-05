@@ -33,6 +33,9 @@ parameters:
     default: 1
     constraints:
       - range: {min: 1}
+  network:
+    type: string
+    label: Network ID or name
 resources:
   group-disk:
     type: OS::Heat::AutoScalingGroup

@@ -14,12 +14,16 @@ parameters:
     type: string
     label: Image ID
     description: Image to be used for compute instance
-    default: 80245de9-cb3c-4f61-ac84-e0f800055cf5
+    default: 8405d07e-25c9-449d-a908-46bded58000b
   instance_type:
     type: string
     label: Instance Type
     description: Type of instance (flavor) to be used
-    default: m1.tiny
+    default: m1.small
+  network:
+    type: string
+    label: Network ID or name
+    default: 5c4d3f44-e28d-46dc-b52a-53a5844ad804
 resources:
   nova_server:
     type: OS::Nova::Server
@@ -28,6 +32,7 @@ resources:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image_id }
       flavor: { get_param: instance_type }
+      networks: { get_param: network }
       user_data_format: RAW
       user_data: |
         #!/bin/sh
