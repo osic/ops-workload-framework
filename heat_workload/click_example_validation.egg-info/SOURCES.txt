@@ -1,0 +1,8 @@
+setup.py
+workload_def.py
+click_example_validation.egg-info/PKG-INFO
+click_example_validation.egg-info/SOURCES.txt
+click_example_validation.egg-info/dependency_links.txt
+click_example_validation.egg-info/entry_points.txt
+click_example_validation.egg-info/requires.txt
+click_example_validation.egg-info/top_level.txt

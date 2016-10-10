@@ -64,11 +64,27 @@ resources:
       min_size: 1
       resource:
         type: OS::Nova::Server::Ram
+  group-slice:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      cooldown: 60
+      desired_capacity: { get_param: num_of_slices }
+      max_size: { get_param: scaling_size }
+      min_size: 1
+      resource:
+        type: OS::Nova::Server::Slice
   scaleup_policy_disk:
     type: OS::Heat::ScalingPolicy
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: group-disk }
+      cooldown: 60
+      scaling_adjustment: 1
+  scaleup_policy_slice:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: group-slice }
       cooldown: 60
       scaling_adjustment: 1
   scaleup_policy_cpu:
@@ -104,3 +120,9 @@ outputs:
       can invoke the scale-up operation by doing an HTTP POST to this
       URL; no body nor extra headers are needed.
     value: {get_attr: [scaleup_policy_cpu, alarm_url]}
+  scale_up_url_slice:
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+    value: {get_attr: [scaleup_policy_slice, alarm_url]}

@@ -1,0 +1,33 @@
+heat_template_version: 2014-10-16
+description: CPU intensive resource.
+
+parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: 8405d07e-25c9-449d-a908-46bded58000b
+  instance_type:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    default: m1.small
+  network:
+    type: string
+    label: Network ID or name
+    default: 5c4d3f44-e28d-46dc-b52a-53a5844ad804
+resources:
+  nova_server_disk:
+    type: disk.yaml
+  nova_server_cpu:
+    type: cpu.yaml
+  nova_server_ram:
+    type: ram.yaml
