@@ -7,7 +7,7 @@ parameters:
   "num_of_slices": 1
   "instance_type": "m1.small"
   "image_id": "3c1e5629-391c-42cf-9c5f-74dfc15383f9"
-  "scaling_size": 8
+  "scaling_size": 2
   "availability_zone": "nova"
   "volume_size": 1
   "network_id": "24114df6-f40e-4f40-b442-60f92f75e4ef"
