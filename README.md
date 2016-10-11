@@ -43,6 +43,7 @@ curl -XPOST -i "<URL>"
 
 An environment file is defined in the "environment" directory which defines the input parameters and their values in "parameter: value" format. The file is
 divided into two section: 
+
 1. The "parameters" section defines the value of the input parameters used in the resource definition and the autoscaling groups heat templates.
 The parameters section should define the attributes along with their values that will be used for booting each resource:
 
@@ -55,7 +56,7 @@ The parameters section should define the attributes along with their values that
   + network_id: The ID or name of network whose subnets will be used for booting the instance.
 
 2. The "resource_registry" maps one resource to another. The resource_registry section should specify the absolute path of the particular resource definition when mapping it to another resource.
-  + <resource name to map to>: <absolute path of resource which is to be mapped>
+  + "resource name to map to": "absolute path of resource which is to be mapped"
 
 
 ### Create Heat Stack
