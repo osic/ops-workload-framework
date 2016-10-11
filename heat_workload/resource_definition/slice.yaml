@@ -1,33 +1,50 @@
-heat_template_version: 2014-10-16
+heat_template_version: 2015-04-30
 description: CPU intensive resource.
 
 parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
-    default: nova
   volume_size:
     type: number
     description: Size of the volume to be created.
-    default: 1
   image_id:
     type: string
     label: Image ID
     description: Image to be used for compute instance
-    default: 8405d07e-25c9-449d-a908-46bded58000b
+    constraints:
+      - custom_constraint: glance.image
   instance_type:
     type: string
-    label: Instance Type
-    description: Type of instance (flavor) to be used
-    default: m1.small
-  network:
+    label: Flavor Type
+    description: Flavor Type
+    constraints:
+      - custom_constraint: nova.flavor
+  network_id:
     type: string
-    label: Network ID or name
-    default: 5c4d3f44-e28d-46dc-b52a-53a5844ad804
+    label: Network ID/Name
+    description: Network to be used for compute instance.
 resources:
   nova_server_disk:
     type: disk.yaml
+    properties:
+      image_id: { get_param: image_id }
+      instance_type: { get_param: instance_type }
+      network_id: { get_param: network_id }
+      availability_zone: { get_param: availability_zone }
+      volume_size: { get_param: volume_size }
   nova_server_cpu:
     type: cpu.yaml
+    properties:
+      image_id: { get_param: image_id }
+      instance_type: { get_param: instance_type }
+      network_id: { get_param: network_id }
+      availability_zone: { get_param: availability_zone }
+      volume_size: { get_param: volume_size }
   nova_server_ram:
     type: ram.yaml
+    properties:
+      image_id: { get_param: image_id }
+      instance_type: { get_param: instance_type }
+      network_id: { get_param: network_id }
+      availability_zone: { get_param: availability_zone }

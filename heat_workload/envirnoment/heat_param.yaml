@@ -6,8 +6,8 @@ resource_registry:
 parameters:
   "num_of_slices": 1
   "instance_type": "m1.small"
-  "image_id": "8405d07e-25c9-449d-a908-46bded58000b"
+  "image_id": "3c1e5629-391c-42cf-9c5f-74dfc15383f9"
   "scaling_size": 8
   "availability_zone": "nova"
   "volume_size": 1
-  "network": "5c4d3f44-e28d-46dc-b52a-53a5844ad804"
+  "network_id": "24114df6-f40e-4f40-b442-60f92f75e4ef"

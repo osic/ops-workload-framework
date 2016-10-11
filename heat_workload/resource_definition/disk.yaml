@@ -1,11 +1,10 @@
-heat_template_version: 2014-10-16
+heat_template_version: 2015-04-30
 description: Disk intensive resource.
 
 parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
-    default: nova
   volume_size:
     type: number
     description: Size of the volume to be created.
@@ -16,24 +15,36 @@ parameters:
     type: string
     label: Image ID
     description: Image to be used for compute instance
-    default: 8405d07e-25c9-449d-a908-46bded58000b
+    constraints:
+      - custom_constraint: glance.image
   instance_type:
     type: string
     label: Instance Type
     description: Type of instance (flavor) to be used
-    default: m1.small
-  network:
+    constraints:
+      - custom_constraint: nova.flavor
+  network_id:
     type: string
-    label: Network ID or name
-    default: "5c4d3f44-e28d-46dc-b52a-53a5844ad804"
+    label: Network ID/Name
+    description: Network to be used for compute instance.
 resources:
+  name_nonce:
+    type: OS::Heat::RandomString
+    properties:
+            length: 7
+            sequence: lowercase
   nova_server:
     type: OS::Nova::Server
     properties:
-      name: disk-%index%
+      name:
+        str_replace:
+          template: disk-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
       availability_zone: { get_param: availability_zone }
+      networks:
+        - network: { get_param: network_id }
       image: { get_param: image_id }
-      networks: { get_param: network }
       flavor: { get_param: instance_type }
   cinder_volume:
     type: OS::Cinder::Volume

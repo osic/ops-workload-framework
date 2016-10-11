@@ -1,19 +1,10 @@
 import click
 import os
 import subprocess
+import time
 @click.group()
 def workload_def():
     pass
-
-
-@workload_def.command('register-creds')
-@click.option('--path', '-p', type=str, required=False)
-def register_creds(path):
-    command = ['bash', '-c', 'source ' + path]
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    proc.communicate()
-    print("Credential OK.")
-
 
 @workload_def.command('workload-create')
 @click.option('--name', '-n', type=str, required=True)
@@ -31,14 +22,20 @@ def workload_define(name,insecure):
     print("Stack Creation Finished")
 
 @workload_def.command('scale-up')
-@click.option('-sf', type=str, required=False, default=1, help="Adjust scaling factor")
+@click.option('-sf', type=int, required=False, default=1, help="Adjust scaling factor")
 @click.option('--url', type=str, required=True, help="Webhook URL for scaling resources")
-@click.option('--insecure', required=False, default=True, type=str, help="Self signed certificate")
-def scale_up(scaling_factor,sf,url, insecure):
-    for i in range(1,sf):
-      if (insecure == "True"):
-          comm = "curl -XPOST -i " + url + " --insecure"
-      else:
-          comm = "curl -XPOST -i " + url
-      os.system(comm)
+@click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
+def scale_up(sf,url, insecure):
+    max_processes = 5
+    processes = set()
+    if (insecure == "True"):
+        for i in range(1, sf+1):
+            comm = "curl -XPOST --insecure -i " + "'" + url + "'"
+            os.system(comm)
+            time.sleep(10)
+    else:
+        for i in range(1, sf):
+            comm = "curl -XPOST -i " + url
+            os.system(comm)
+    print(comm)
     print("Scaling done...")
