@@ -39,7 +39,7 @@ resources:
     properties:
       cooldown: 60
       desired_capacity: { get_param: num_of_slices }
-      max_size: { get_param: scaling_size }
+      max_size: 99
       min_size: 1
       resource:
         type: OS::Nova::Server::Slice
@@ -55,7 +55,7 @@ resources:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: group-slice }
       cooldown: 60
-      scaling_adjustment: 1
+      scaling_adjustment: { get_param: scaling_size }
 outputs:
   scale_up_url_slice:
     description: >
