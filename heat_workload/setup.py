@@ -7,7 +7,6 @@ setup(
     include_package_data=True,
     install_requires=[
         'click',
-        'python-openstackclient'
     ],
     entry_points='''
         [console_scripts]
