@@ -3,8 +3,6 @@ import os
 import subprocess
 import time
 import fileinput
-from novaclient.v2 import client as client_nova
-from heatclient.v1 import client as client_heat
 @click.group()
 def workload_def():
     pass
@@ -12,11 +10,15 @@ def workload_def():
 
 
 @workload_def.command('workload-create')
-@click.option('--name', '-n', type=str, required=True)
+@click.option('--name', type=str, required=True)
 @click.option('--insecure', required=False, default=True, type=str)
-def workload_define(name,insecure):
+@click.option('-n', required=False, default=1, type=str)
+def workload_define(name,insecure,n):
     template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
     env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
+    newline = "  \"num_of_slices\": " + n
+    pattern = "  \"num_of_slices\": "
+    replace(newline,pattern,env_path)
     if(insecure == "True"):
         comm = "openstack stack create -t " + template_path + " -e " + env_path + " "+ name + " --insecure"
     else:
@@ -32,9 +34,9 @@ def workload_define(name,insecure):
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
 def scale_up(sf,name, insecure):
     comm_1 = "openstack stack show " + name
-    comm_url = comm_1 + " | grep \"output_value: https\" | awk 'BEGIN{ FS=\" https\"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
+    comm_url = comm_1 + " | grep \"output_value: \" | awk 'BEGIN{ FS=\"output_value: \"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
     url = subprocess.check_output(comm_url, shell=True)
-    url = "https" + url.strip()
+    url = url.strip()
     if (insecure == "True"):
         for i in range(1, sf+1):
             comm = "curl -XPOST --insecure -i " + "'" + url + "'"
@@ -113,7 +115,7 @@ def create_network(env_path):
     return net_id
 
 def create_image(env_path):
-    comm = "openstack --os-image-api-version 1 image create ubuntu --location \"http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    comm = "openstack --os-image-api-version 1 image create ubuntu_14.04 --location \"http://releases.ubuntu.com/14.04/ubuntu-14.04.5-server-i386.iso\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     image_id = subprocess.check_output(comm, shell=True)
     image_id = image_id.strip()
     newline = "  \"image_id\": " + image_id
