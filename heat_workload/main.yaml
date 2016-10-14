@@ -37,7 +37,7 @@ resources:
   group-slice:
     type: OS::Heat::AutoScalingGroup
     properties:
-      cooldown: 60
+      cooldown: 0
       desired_capacity: { get_param: num_of_slices }
       max_size: 99
       min_size: 1
@@ -54,7 +54,7 @@ resources:
     properties:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: group-slice }
-      cooldown: 60
+      cooldown: 0
       scaling_adjustment: { get_param: scaling_size }
 outputs:
   scale_up_url_slice:
