@@ -72,26 +72,34 @@ openstack stack create -t main.yaml -e environment/heat_param.yaml <name_of_stac
 ```
 ### Python Wrapper
 
-A python wrapper is created which will perform most of the operations of workload generation which involves defining, deleting and scaling. 
+A python wrapper is created which will perform most of the operations of workload generation which involves defining, deleting and scaling.
+The wrapper also validates quotas while creation and scaling and terminates operation at runtime if existing quotas are insufficient.
+The credentials required for connecting to exisitng Openstack deployment should be stored as environment variables.
 ```shell
 #Install python wrapper
 python setup.py install
 
+#Create Context (will create Ubuntu 14.04 image, network and flavor)
+workload_def context-create
+
+#Check quotas before creating workloads (Recommended)
+workload_def quota-check
+
 #Create Workload
-workload_def workload-create -n <name_of_workload>
+workload_def workload-create -name <name_of_workload>
+
+#Check status of workload creation:
+workload_def check-status --name <name_of_workload>
 
 #Scale-up workload
 workload_def scale-up -sf <scaling-factor> --url <Webhook URL>
 
-#Check status of workload
-workload_def check-status --name <name_of_workload>
-
-#Delete Workload
+#Delete Workload and context environment
 workload_def workload-delete --name <name_of_workload>
 ```
+
 
 ### To Do Items
 
 + Some variable values in the environment file (Image, Instance Type) are not being reflected in the individual resource definition. Debugging the cause for the same. -- done
 + Adding feature for  deleting workload, view status of workload, and having the scale-up perform scaling up by just specifying the workload name. --done
-+ Parallel booting of workloads across multiple nova instances.
