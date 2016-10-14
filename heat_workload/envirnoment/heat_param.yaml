@@ -4,9 +4,9 @@ resource_registry:
   "OS::Nova::Server::Ram": "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
   "OS::Nova::Server::Slice": "/opt/ops-workload-framework/heat_workload/resource_definition/slice.yaml"
 parameters:
-  "num_of_slices": 1
-  "instance_type": 2bc290fa-2117-4162-b174-ef24ca3d2eca
-  "image_id": 3616c3ef-ab45-4939-805d-57a64e0f4f23
+  "num_of_slices": 2
+  "instance_type": e1b2112a-06e5-476d-b2c7-95382c06be18
+  "image_id": 1fc1aa3b-00d2-454b-b693-0d2b10d5f85f
   "availability_zone": "nova"
   "volume_size": 1
-  "network_id": 7f5c41c5-d091-4a50-9dc8-bbfe4da0e68d
+  "network_id": 0c991052-617a-4676-8768-4efce737f17c

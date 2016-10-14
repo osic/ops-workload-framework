@@ -115,12 +115,12 @@ def create_context():
 
 @workload_def.command('quota-check')
 def quota_check():
-    curr_instances = get_count("server")
-    curr_ports = get_count("port")
+    curr_instances = 0 if get_count("server") < 0 else get_count("server")
+    curr_ports = 0 if get_count("port") < 0 else get_count("port")
     curr_ram = 2048 * curr_instances
     curr_cores = 2 * curr_instances
     curr_volumes = 1 * curr_instances
-    curr_networks = get_count("network")
+    curr_networks = 0 if get_count("network") < 0 else get_count("network")
     d = quota_parse()
     print("Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
     print("Ports: \n" + "Current Usage: " + str(curr_ports) + "\n" + "Total Usage: " + str(d['ports']) + "\n")
@@ -134,17 +134,24 @@ def create_flavor(env_path):
     comm = "openstack flavor create custom.workload.c1 --ram 2048 --disk 10 --vcpu 1 --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     #os.system("openstack flavor create m1.small_1 --ram 2048 --disk 10 --vcpu 1 --public")
     comm_check = "openstack flavor show custom.workload.c1"
-    result = subprocess.check_output(comm_check, shell=True)
-    if("No flavor with a name" in result):
-        flavor_id = subprocess.check_output(comm, shell=True)
-        flavor_id = flavor_id.strip()
-        newline = "  \"instance_type\": " + flavor_id
-        pattern = "  \"instance_type\": "
-        replace(newline,pattern,env_path)
-    else:
-        comm_check = "openstack flavor show custom.workload.c1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
-        flavor_id = subprocess.check_output(comm_check, shell=True)
-        print("Flavor custom.workload.c1 already present")
+    try:
+       result = subprocess.check_output(comm_check, shell=True)
+       if("No flavor with a name" in result):
+           flavor_id = subprocess.check_output(comm, shell=True)
+           flavor_id = flavor_id.strip()
+           newline = "  \"instance_type\": " + flavor_id
+           pattern = "  \"instance_type\": "
+           replace(newline,pattern,env_path)
+       else:
+           comm_check = "openstack flavor show custom.workload.c1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+           flavor_id = subprocess.check_output(comm_check, shell=True)
+           print("Flavor custom.workload.c1 already present")
+    except:
+       flavor_id = subprocess.check_output(comm, shell=True)
+       flavor_id = flavor_id.strip()
+       newline = "  \"instance_type\": " + flavor_id
+       pattern = "  \"instance_type\": "
+       replace(newline,pattern,env_path) 
     return flavor_id.strip()
 
 def replace(newline,pattern,env_path):
@@ -192,12 +199,12 @@ def create_image(env_path):
     return image_id.strip()
 
 def quota_parse():
-    comm_instances = "openstack quota show -c instances admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
-    comm_ram = "openstack quota show -c ram admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
-    comm_cores = "openstack quota show -c cores admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
-    comm_volumes = "openstack quota show -c volumes admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
-    comm_networks = "openstack quota show -c networks admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
-    comm_ports = "openstack quota show -c ports admin -f shell  | awk 'BEGIN{ FS=\"\=\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $1}'"
+    comm_instances = "openstack quota show -c instances admin -f shell  | cut -d \"=\" -f2"
+    comm_ram = "openstack quota show -c ram admin -f shell  | cut -d \"=\" -f2"
+    comm_cores = "openstack quota show -c cores admin -f shell  | cut -d \"=\" -f2"
+    comm_volumes = "openstack quota show -c volumes admin -f shell  | cut -d \"=\" -f2"
+    comm_networks = "openstack quota show admin -f shell | grep networ  | cut -d \"=\" -f2"
+    comm_ports = "openstack quota show admin -f shell | grep port  | cut -d \"=\" -f2"
     instances = int(subprocess.check_output(comm_instances, shell=True).strip().replace('"',''))
     cores = int(subprocess.check_output(comm_cores, shell=True).strip().replace('"',''))
     volumes = int(subprocess.check_output(comm_volumes, shell=True).strip().replace('"',''))

@@ -86,7 +86,7 @@ workload_def context-create
 workload_def quota-check
 
 #Create Workload
-workload_def workload-create -name <name_of_workload>
+workload_def workload-create -name <name_of_workload> -n <num_of_slices>
 
 #Check status of workload creation:
 workload_def check-status --name <name_of_workload>
