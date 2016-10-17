@@ -4,6 +4,7 @@ import subprocess
 import time
 import fileinput
 import sys
+import requests
 import yaml
 @click.group()
 def workload_def():
@@ -45,20 +46,38 @@ def scale_up(sf,name, insecure):
     validator = quota_validate(sf)
     if (validator == 1):
         print("Quota Validated")
+        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
+        env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
         comm_1 = "openstack stack show " + name
         comm_url = comm_1 + " | grep \"output_value: \" | awk 'BEGIN{ FS=\"output_value: \"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
         url = subprocess.check_output(comm_url, shell=True)
         url = url.strip()
+        stream = open(env_path,'r')
+        data = yaml.load(stream)
+        sf = int(data['parameters']['num_of_slices']) + int(sf)
+        newline = "  \"num_of_slices\": " + str(sf)
+        pattern = "  \"num_of_slices\": "
+        replace(newline,pattern,env_path)
         if (insecure == "True"):
-            for i in range(1, sf+1):
-                comm = "curl -XPOST --insecure -i " + "'" + url + "'"
-                os.system(comm)
-                time.sleep(120)
+            comm = "openstack stack update -t " + template_path + " -e " + env_path + " " + name + " --insecure" 
+            #for i in range(0, sf):
+        
+                #response = requests.post(url, verify=False)
+                #print response.status_code
+                #time.sleep(30)
+                #comm = "curl -XPOST --insecure -i " + "'" + url + "' &"
+                #os.system(comm)
+                #time.sleep(20)
         else:
-            for i in range(1, sf+1):
-                comm = "curl -XPOST -i " + url
-                os.system(comm)
-        print(comm)
+            comm = "openstack stack update -t " + template_path + " -e " + env_path + " " + name
+            #for i in range(0, sf):
+               # response = requests.post(url)
+               # print response.status_code
+               # time.sleep(30)
+                #comm = "curl -XPOST -i " + "'" + url + "'" + " &"
+                #os.system(comm)
+        #print(comm)
+        os.system(comm)
         print("Scaling done...")
     elif validator == 0:
         print("Quota will exceed. Please reduce the scaling factor")
@@ -182,7 +201,7 @@ def create_network(env_path):
     return net_id
 
 def create_image(env_path):
-    comm = "openstack --os-image-api-version 1 image create ubuntu_14.04 --location \"http://releases.ubuntu.com/14.04/ubuntu-14.04.5-server-i386.iso\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    comm = "openstack --os-image-api-version 1 image create centos_14.04 --location \"http://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud-1508.qcow2\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     comm_check = "openstack image show ubuntu_14.04"
     try:
         result = subprocess.check_output(comm_check, shell=True)
