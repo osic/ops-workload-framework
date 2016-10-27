@@ -1,8 +1,30 @@
 ### ops-workload-framework:
 
 ### About this Repository
+The purpose of the repo is to generate workloads in our OpenStack deployments that will help us gather meaningful data and close to production scenarios, that will help us to address each of the OSIC KPIs at scale.
 
-This is a repository for artifacts realted to generating Workload slices  and autoscaling those slices based on resource utilization.
+### Overview
+Understanding how Business-critical workloads (web servers, mail servers, app servers, etc) demand and use resources is key in capacity sizing, in infrastructure operation and testing, and in application performance management.
+It is really hard to understand workload information due to its complexity (larger scale, heterogeneous, shared clusters). Based on “Statistical Characterization of Business-Critical Workloads Hosted in Cloud Datacenters” there are four key types of resources that can become bottlenecks for business-critical applications: CPU, disk I/O, memory and Network I/O.
+
+### Proposed Workloads
+Mixed resource workload: CPU, Memory, Network, disk.
++ Wordpress stack with Gatling 
++ Cassandra DB R/W
++ Network I/O
++ Online store
+
+Tooling
++ Rally
++ YCSB
+
+
+Test case example
+
++ Metric: Required time to recover vm after compute node failure.
+
++ Expected result: All failed vms on error injected compute nodes are living on a working compute node.
+
 
 ### Elements
 + Prerequisites
@@ -82,17 +104,17 @@ python setup.py install
 #Create Context (will create Ubuntu 14.04 image, network and flavor)
 workload_def context-create
 
-#Check quotas before creating workloads (Recommended)
+#Check quotas before creating workloads (Recommended) 
 workload_def quota-check
 
-#Create Workload
+#Create Workload 
 workload_def workload-create -name <name_of_workload> -n <num_of_slices>
 
 #Check status of workload creation:
 workload_def check-status --name <name_of_workload>
 
 #Scale-up workload
-workload_def scale-up -sf <scaling-factor> --url <Webhook URL>
+workload_def scale-up -sf <scaling-factor> --name <name_of_workload>
 
 #Delete Workload and context environment
 workload_def workload-delete --name <name_of_workload>
