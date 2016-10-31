@@ -5,6 +5,9 @@ parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
+  key:
+    type: string
+    description: Key pair used to ssh into instance.
   volume_size:
     type: number
     description: Size of the volume to be created.
@@ -42,6 +45,7 @@ resources:
           params:
             $NONCE: { get_resource: name_nonce}
       availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key }
       networks:
         - network: { get_param: network_id }
       image: { get_param: image_id }

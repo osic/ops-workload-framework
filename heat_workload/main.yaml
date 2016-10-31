@@ -5,6 +5,9 @@ parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
+  key:
+    type: string
+    description: Key pair used to ssh into instance.
   volume_size:
     type: number
     description: Size of the volume to be created.
@@ -48,6 +51,7 @@ resources:
           network_id: { get_param: network_id }
           availability_zone: { get_param: availability_zone }
           volume_size: { get_param: volume_size }
+          key: { get_param: key }
   scaleup_policy_slice:
     type: OS::Heat::ScalingPolicy
     properties:

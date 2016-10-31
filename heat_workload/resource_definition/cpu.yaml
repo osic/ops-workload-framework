@@ -24,6 +24,9 @@ parameters:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
+  key:
+    type: string
+    description: Key pair used to ssh into instance.
 resources:
   name_nonce:
     type: OS::Heat::RandomString
@@ -41,6 +44,7 @@ resources:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image_id }
       flavor: { get_param: instance_type }
+      key_name: { get_param: key }
       networks: 
         - network: { get_param: network_id }
       user_data_format: RAW
