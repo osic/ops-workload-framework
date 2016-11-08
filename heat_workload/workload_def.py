@@ -247,13 +247,17 @@ def create_network(env_path):
 
 
 def create_image(env_path):
-    comm = "openstack --os-image-api-version 1 image create centos_14.04 --location \"http://cloud.centos.org/centos/6/images/CentOS-6-x86_64-GenericCloud-1508.qcow2\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    comm = "openstack --os-image-api-version 1 image create ubuntu_14.04 --location \"http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     comm_check = "openstack image show ubuntu_14.04"
     try:
         result = subprocess.check_output(comm_check, shell=True)
         comm_check = "openstack image show ubuntu_14.04 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         image_id = subprocess.check_output(comm_check, shell=True)
         print("Image ubuntu_14.04 already present")
+        image_id = image_id.strip()
+        newline = "  \"image_id\": " + image_id
+        pattern = "  \"image_id\": "
+        replace(newline,pattern,env_path)
     except:
         image_id = subprocess.check_output(comm, shell=True)
         image_id = image_id.strip()

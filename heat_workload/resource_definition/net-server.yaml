@@ -8,9 +8,6 @@ parameters:
   key:
     type: string
     description: Key pair used to ssh into instance.
-  volume_size:
-    type: number
-    description: Size of the volume to be created.
   image_id:
     type: string
     label: Image ID
@@ -54,7 +51,7 @@ resources:
     properties:
             length: 7
             sequence: lowercase
-  nova_client:
+  nova_server:
     type: OS::Nova::Server
     properties:
       name:
@@ -67,7 +64,7 @@ resources:
       flavor: { get_param: instance_type }
       key_name: { get_param: key }
       networks: 
-        - network: { get_resource: port_server }
+        - port: { get_resource: port_server }
       user_data_format: RAW
       user_data: 
         str_replace:

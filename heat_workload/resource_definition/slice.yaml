@@ -45,7 +45,7 @@ resources:
       network_id: { get_param: network_id }
       availability_zone: { get_param: availability_zone }
       volume_size: { get_param: volume_size }
-      key_name: { get_param: key }
+      key: { get_param: key }
   nova_server_ram:
     type: ram.yaml
     properties:
@@ -53,7 +53,7 @@ resources:
       instance_type: { get_param: instance_type }
       network_id: { get_param: network_id }
       availability_zone: { get_param: availability_zone }
-      key_name: { get_param: key }
+      key: { get_param: key }
   nova_client_nw:
     type: net-client.yaml
     properties:
