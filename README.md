@@ -1,13 +1,27 @@
 ### ops-workload-framework:
 
-### About this Repository
+About this Repository
+---------------------
 The purpose of the repo is to generate workloads in our OpenStack deployments that will help us gather meaningful data and close to production scenarios, that will help us to address each of the OSIC KPIs at scale.
 
-### Overview
+Contents
+---------
+[Overview](https://github.com/osic/ops-workload-framework/edit/master/README.md#overview)
+[Proposed Workloads](https://github.com/osic/ops-workload-framework/edit/master/README.md#proposed-workloads)
+[Prerequisites](https://github.com/osic/ops-workload-framework/edit/master/README.md#prerequisites)
+[Workload Definition](https://github.com/osic/ops-workload-framework/edit/master/README.md#workload-definition)
+[Autoscaling group](https://github.com/osic/ops-workload-framework/edit/master/README.md#autoscaling-group)
+[Environment Variables](https://github.com/osic/ops-workload-framework/edit/master/README.md#environment-variables)
+[Create Heat Stack](https://github.com/osic/ops-workload-framework/edit/master/README.md#create-heat-stack)
+[Python Wrapper](https://github.com/osic/ops-workload-framework/edit/master/README.md#python-wrapper)
+
+Overview
+--------
 Understanding how Business-critical workloads (web servers, mail servers, app servers, etc) demand and use resources is key in capacity sizing, in infrastructure operation and testing, and in application performance management.
 It is really hard to understand workload information due to its complexity (larger scale, heterogeneous, shared clusters). Based on “Statistical Characterization of Business-Critical Workloads Hosted in Cloud Datacenters” there are four key types of resources that can become bottlenecks for business-critical applications: CPU, disk I/O, memory and Network I/O.
 
-### Proposed Workloads
+Proposed Workloads
+------------------
 Mixed resource workload: CPU, Memory, Network, disk.
 + Wordpress stack with Gatling 
 + Cassandra DB R/W
@@ -26,27 +40,22 @@ Test case example
 + Expected result: All failed vms on error injected compute nodes are living on a working compute node.
 
 
-### Elements
-+ Prerequisites
-+ Resource Definition
-+ Autoscaling group
-+ Environment Variables
-+ Create Heat Stack
-+ Python Wrapper
-
-### Prerequisites
+Prerequisites
+-------------
 
 + An existing OpenStack Cloud on which to deploy the resources.
 + Python Heat / OpenStack Client installed and configured with credentials on host machine.
 + Horizon Dashboard (optional) to check the status of autoscaling and workload generation.
 
-### Resource Definition
+Workload Definition
+-------------------
 
 This part involves creating your own resource using Heat templates which will be deployed on the cloud. An example for this could be a RAM Intensive resource
 which can host applications consuming more memory.
 All resource definition are located and stored inside the "resource_definition" directory and should be specified in the "slice.yaml" file.
 
-### Autoscaling group
+Autoscaling group
+-----------------
 
 The autoscaling group are Heat templates that utilizes the autoscaling policy of Heat. They define a group of resources that are deployed as a slice and can be
 scaled up or down as per the requirement. For a resource to be included in a autoscaling group, it must first be defined and then registered to resource path in
@@ -61,7 +70,8 @@ The autoscaling groups are defined inside the "main.yaml" file.
 curl -XPOST -i "<URL>"
 ```
 
-### Environment Variables
+Environment Variables
+---------------------
 
 An environment file is defined in the "environment" directory which defines the input parameters and their values in "parameter: value" format. The file is
 divided into two section: 
@@ -81,7 +91,8 @@ The parameters section should define the attributes along with their values that
   + "resource name to map to": "absolute path of resource which is to be mapped"
 
 
-### Create Heat Stack
+Create Heat Stack
+-----------------
 
 Once the resources are defined and are added into the autoscaling group, Heat stacks can be created using python heat/openstack client.
 
@@ -92,7 +103,8 @@ heat stack-create -f main.yaml -e environment/heat_param.yaml <name_of_stack>
 #Create Heat Stack using openstack client
 openstack stack create -t main.yaml -e environment/heat_param.yaml <name_of_stack>
 ```
-### Python Wrapper
+Python Wrapper
+--------------
 
 A python wrapper is created which will perform most of the operations of workload generation which involves defining, deleting and scaling.
 The wrapper also validates quotas while creation and scaling and terminates operation at runtime if existing quotas are insufficient.
@@ -121,7 +133,7 @@ workload_def workload-delete --name <name_of_workload>
 ```
 
 
-### To Do Items
-
+To Do Items
+-----------
 + Some variable values in the environment file (Image, Instance Type) are not being reflected in the individual resource definition. Debugging the cause for the same. -- done
 + Adding feature for  deleting workload, view status of workload, and having the scale-up perform scaling up by just specifying the workload name. --done
