@@ -6,14 +6,14 @@ The purpose of the repo is to generate workloads in our OpenStack deployments th
 
 Contents
 ---------
-[Overview](https://github.com/osic/ops-workload-framework/edit/master/README.md#overview)
-[Proposed Workloads](https://github.com/osic/ops-workload-framework/edit/master/README.md#proposed-workloads)
-[Prerequisites](https://github.com/osic/ops-workload-framework/edit/master/README.md#prerequisites)
-[Workload Definition](https://github.com/osic/ops-workload-framework/edit/master/README.md#workload-definition)
-[Autoscaling group](https://github.com/osic/ops-workload-framework/edit/master/README.md#autoscaling-group)
-[Environment Variables](https://github.com/osic/ops-workload-framework/edit/master/README.md#environment-variables)
-[Create Heat Stack](https://github.com/osic/ops-workload-framework/edit/master/README.md#create-heat-stack)
-[Python Wrapper](https://github.com/osic/ops-workload-framework/edit/master/README.md#python-wrapper)
++ [Overview](https://github.com/osic/ops-workload-framework/edit/master/README.md#overview)
++ [Proposed Workloads](https://github.com/osic/ops-workload-framework/edit/master/README.md#proposed-workloads)
++ [Prerequisites](https://github.com/osic/ops-workload-framework/edit/master/README.md#prerequisites)
++ [Workload Definition](https://github.com/osic/ops-workload-framework/edit/master/README.md#workload-definition)
++ [Autoscaling group](https://github.com/osic/ops-workload-framework/edit/master/README.md#autoscaling-group)
++ [Environment Variables](https://github.com/osic/ops-workload-framework/edit/master/README.md#environment-variables)
++ [Create Heat Stack](https://github.com/osic/ops-workload-framework/edit/master/README.md#create-heat-stack)
++ [Python Wrapper](https://github.com/osic/ops-workload-framework/edit/master/README.md#python-wrapper)
 
 Overview
 --------
