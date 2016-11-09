@@ -13,7 +13,7 @@ Contents
 + [Autoscaling group](https://github.com/osic/ops-workload-framework/blob/master/README.md#autoscaling-group)
 + [Environment Variables](https://github.com/osic/ops-workload-framework/blob/master/README.md#environment-variables)
 + [Create Heat Stack](https://github.com/osic/ops-workload-framework/blob/master/README.md#create-heat-stack)
-+ [Python Wrapper]https://github.com/osic/ops-workload-framework/blob/master/README.md#python-wrapper)
++ [Python Wrapper](https://github.com/osic/ops-workload-framework/blob/master/README.md#python-wrapper)
 
 Overview
 --------
