@@ -101,7 +101,7 @@ The credentials required for connecting to exisitng Openstack deployment should 
 #Install python wrapper
 python setup.py install
 
-#Create Context (will create Ubuntu 14.04 image, network and flavor)
+#Create Context (will create Ubuntu 14.04 image, network, flavor and keypair)
 workload_def context-create
 
 #Check quotas before creating workloads (Recommended) 
