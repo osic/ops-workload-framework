@@ -1,0 +1,4 @@
+
+        [console_scripts]
+        workload_def=workload_def:workload_def
+    
