@@ -18,8 +18,10 @@ def workload_def():
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
 def workload_define(name, insecure, n):
-    print("Validating Quotas")
-    validator = quota_validate(n)
+    print("Validating Quotas"+ os.environ['QUOTA_CHECK_DISABLED'])
+    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+        validator = quota_validate(n)
+    else: validator=1
     if (validator == 1):
         print("Quota Validated")
         template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
@@ -47,7 +49,9 @@ def workload_define(name, insecure, n):
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
 def scale_up(sf, name, insecure):
     print("Validating Quotas")
-    validator = quota_validate(sf)
+    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+        validator = quota_validate(sf)
+    else: validator=1
     if (validator == 1):
         print("Quota Validated")
         template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
@@ -268,7 +272,9 @@ def replace(newline, pattern, env_path):
 def create_network(env_path):
     # os.system("neutron net-create net1")
     print("Validate Network")
-    validator = validate_network()
+    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+          validator = validate_network()
+    else: validator=1
     if (validator == 1):
         comm = "neutron net-create net1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         net_id = subprocess.check_output(comm, shell=True)
@@ -349,19 +355,22 @@ def quota_validate(slice_num):
     #  print pred_volumes
     #  print d
 
-    if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores and d[
+    if (os.environ['QUOTA_CHECK_DISABLED']!=1):
+        if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores and d[
         'volumes'] >= pred_volumes)):
-        return 1
+            return 1
+        else:
+            if (d['instances'] < pred_instances):
+                print "Instance Quota will exceed: Predicted Usage: " + str(pred_instances) + "/" + str(d['instances'])
+            if (d['ram'] < pred_ram):
+                print "Ram Quota will exceed: Predicted Usage: " + str(pred_ram) + "/" + str(d['ram'])
+            if (d['cores'] < pred_cores):
+                print "Cpu Quota will exceed: Predicted Usage: " + str(pred_cores) + "/" + str(d['cores'])
+            if (d['volumes'] < pred_volumes):
+                print "Volume Quota will exceed: Predicted Usage: " + str(pred_volumes) + "/" + str(d['volumes'])
+            return 0
     else:
-        if (d['instances'] < pred_instances):
-            print "Instance Quota will exceed: Predicted Usage: " + str(pred_instances) + "/" + str(d['instances'])
-        if (d['ram'] < pred_ram):
-            print "Ram Quota will exceed: Predicted Usage: " + str(pred_ram) + "/" + str(d['ram'])
-        if (d['cores'] < pred_cores):
-            print "Cpu Quota will exceed: Predicted Usage: " + str(pred_cores) + "/" + str(d['cores'])
-        if (d['volumes'] < pred_volumes):
-            print "Volume Quota will exceed: Predicted Usage: " + str(pred_volumes) + "/" + str(d['volumes'])
-        return 0
+        return 1
 
 
 def get_count(str):
