@@ -174,6 +174,7 @@ def create_context():
     print("Image used to create workloads: " + image_id)
     key_name = create_key(env_path)
     print("Key Used to create workloads: " + key_name)
+    print("Key wload_key.pem stored in the current directory")
 
 
 @workload_def.command('quota-check', help="Check quotas before creating workloads ")
@@ -194,18 +195,21 @@ def quota_check():
     print("Networks: \n" + "Current Usage: " + str(curr_networks) + "\n" + "Total Usage: " + str(d['networks']) + "\n")
 
 def create_key(env_path):
-    comm = "openstack keypair create wload_key > wload_key.pem | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    comm = "openstack keypair create wload_key > wload_key.pem"
     comm_check = "openstack keypair show wload_key"
     try:
        result = subprocess.check_output(comm_check,shell=True)
-       if ("No keypair with a name or ID" in result):
-           key_name = subprocess.check_output(comm, shell=True)
+       if ("No keypair" in result):
+           print "CREATING KEY"
+           result = subprocess.check_output(comm, shell=True)
+           comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
+           key_name = subprocess.check_output(comm_check, shell=True)
            key_name = key_name.strip()
-           newline = "  \"key\": " + key_name 
+           newline = "  \"key\": " + key_name
            pattern = "  \"key\":"
            replace(newline, pattern, env_path)
        else:
-           comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+           comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
            key_name = subprocess.check_output(comm_check, shell=True)
            key_name = key_name.strip()
            print("Keypair wload_key already exists")
@@ -214,6 +218,8 @@ def create_key(env_path):
            replace(newline, pattern, env_path)
     except:
         key_name = subprocess.check_output(comm, shell=True)
+        comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
+        key_name = subprocess.check_output(comm_check, shell=True)
         key_name = key_name.strip()
         newline = "  \"key\": " + key_name
         pattern = "  \"key\":"
@@ -237,6 +243,10 @@ def create_flavor(env_path):
             comm_check = "openstack flavor show custom.workload.c1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
             flavor_id = subprocess.check_output(comm_check, shell=True)
             print("Flavor custom.workload.c1 already present")
+            flavor_id = flavor_id.strip()
+            newline = "  \"instance_type\": " + flavor_id
+            pattern = "  \"instance_type\": "
+            replace(newline, pattern, env_path)
     except:
         flavor_id = subprocess.check_output(comm, shell=True)
         flavor_id = flavor_id.strip()
