@@ -21,8 +21,8 @@ Overview
 Understanding how Business-critical workloads (web servers, mail servers, app servers, etc) demand and use resources is key in capacity sizing, in infrastructure operation and testing, and in application performance management.
 It is really hard to understand workload information due to its complexity (larger scale, heterogeneous, shared clusters). Based on “Statistical Characterization of Business-Critical Workloads Hosted in Cloud Datacenters” there are four key types of resources that can become bottlenecks for business-critical applications: CPU, disk I/O, memory and Network I/O.
 
-Proposed Workloads in repo
---------------------------
+Proposed Workloads
+------------------
 Mixed resource workload: CPU, Memory, Network, disk.
 + CPU intensive using complex mathematical calculation.
 + RAM intensive by executing malloc C code that fills up RAM memory.
