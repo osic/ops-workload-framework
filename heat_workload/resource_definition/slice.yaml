@@ -54,20 +54,20 @@ resources:
       network_id: { get_param: network_id }
       availability_zone: { get_param: availability_zone }
       key: { get_param: key }
-  nova_client_nw:
-    type: net-client.yaml
-    properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
-      availability_zone: { get_param: availability_zone }
-      key: { get_param: key }
-  nova_server_nw:
-    type: net-server.yaml
-    properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
-      availability_zone: { get_param: availability_zone }
-      key: { get_param: key }
-      client_ip: {get_attr: [nova_client_nw, ip]}
+  #nova_client_nw:
+  #  type: net-client.yaml
+  #  properties:
+   #   image_id: { get_param: image_id }
+   #   instance_type: { get_param: instance_type }
+   #   network_id: { get_param: network_id }
+   #   availability_zone: { get_param: availability_zone }
+   #   key: { get_param: key }
+ # nova_server_nw:
+  #  type: net-server.yaml
+   # properties:
+    #  image_id: { get_param: image_id }
+     # instance_type: { get_param: instance_type }
+      #network_id: { get_param: network_id }
+      #availability_zone: { get_param: availability_zone }
+      #key: { get_param: key }
+      #client_ip: {get_attr: [nova_client_nw, ip]}
