@@ -11,9 +11,10 @@ Contents
 + [Prerequisites](https://github.com/osic/ops-workload-framework/blob/master/README.md#prerequisites)
 + [Workload Definition](https://github.com/osic/ops-workload-framework/blob/master/README.md#workload-definition)
 + [Autoscaling group](https://github.com/osic/ops-workload-framework/blob/master/README.md#autoscaling-group)
++ [Quota Checks](https://github.com/osic/ops-workload-framework/blob/master/README.md#quota-checks)
 + [Environment Variables](https://github.com/osic/ops-workload-framework/blob/master/README.md#environment-variables)
-+ [Create Heat Stack](https://github.com/osic/ops-workload-framework/blob/master/README.md#create-heat-stack)
-+ [Python Wrapper](https://github.com/osic/ops-workload-framework/blob/master/README.md#python-wrapper)
++ [Installation](https://github.com/osic/ops-workload-framework/blob/master/README.md#installation)
++ [Workload Framework](https://github.com/osic/ops-workload-framework/blob/master/README.md#workload-framework)
 
 Overview
 --------
@@ -70,6 +71,15 @@ The autoscaling groups are defined inside the "main.yaml" file.
 curl -XPOST -i "<URL>"
 ```
 
+Quota Checks
+------------
+
+The workload framework can also perform a quota checks before creating workloads and scaling up. The Quota checks evaluates current quotas and will deploy workloads only if there are enough quotas available for creation or scaling up(depending on operation performed). 
+Quota checks can be disabled by setting `QUOTA_CHECK_DISABLED` to '1':
+```shell
+export QUOTA_CHECK_DISABLED='1'
+```
+
 Environment Variables
 ---------------------
 
@@ -90,29 +100,32 @@ The parameters section should define the attributes along with their values that
 2. The "resource_registry" maps one resource to another. The resource_registry section should specify the absolute path of the particular resource definition when mapping it to another resource.
   + "resource name to map to": "absolute path of resource which is to be mapped"
 
+Installation
+------------
 
-Create Heat Stack
------------------
-
-Once the resources are defined and are added into the autoscaling group, Heat stacks can be created using python heat/openstack client.
-
+##### Step 1: Clone repo in /opt:
 ```shell
-#Create Heat Stack using heat client
-heat stack-create -f main.yaml -e environment/heat_param.yaml <name_of_stack>
-
-#Create Heat Stack using openstack client
-openstack stack create -t main.yaml -e environment/heat_param.yaml <name_of_stack>
+git clone https://github.com/osic/ops-workload-framework.git /opt/ops-workload-framework
 ```
-Python Wrapper
---------------
+
+##### Step 2: Install Workload Framework:
+```shell
+cd /opt/ops-workload-framework/heat_workload/
+python setup.py install
+```
+
+##### Step 3: Check Workload Framework:
+```shell
+workload_def --help
+```
+
+Workload Framework
+------------------
 
 A python wrapper is created which will perform most of the operations of workload generation which involves defining, deleting and scaling.
 The wrapper also validates quotas while creation and scaling and terminates operation at runtime if existing quotas are insufficient.
 The credentials required for connecting to exisitng Openstack deployment should be stored as environment variables.
 ```shell
-#Install python wrapper
-python setup.py install
-
 #Create Context (will create Ubuntu 14.04 image, network, flavor and keypair)
 workload_def context-create
 
