@@ -81,7 +81,3 @@ resources:
                nc -w 10 '__client_ip__' 1234 < random.img
                rm random.img
             done
-outputs:
-  ip:
-    description: The ip address of the mysql instance
-    value: { get_attr: [nova_server, first_address] }
