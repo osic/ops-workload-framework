@@ -18,8 +18,7 @@ def workload_def():
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
 def workload_define(name, insecure, n):
-    print("Validating Quotas"+ os.environ['QUOTA_CHECK_DISABLED'])
-    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+    if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(n)
     else: validator=1
     if (validator == 1):
@@ -49,7 +48,7 @@ def workload_define(name, insecure, n):
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
 def scale_up(sf, name, insecure):
     print("Validating Quotas")
-    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+    if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(sf)
     else: validator=1
     if (validator == 1):
@@ -208,14 +207,14 @@ def create_key(env_path):
            result = subprocess.check_output(comm, shell=True)
            comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
            key_name = subprocess.check_output(comm_check, shell=True)
-           key_name = key_name.strip()
+           key_name = "wload_key"
            newline = "  \"key\": " + key_name
            pattern = "  \"key\":"
            replace(newline, pattern, env_path)
        else:
            comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
            key_name = subprocess.check_output(comm_check, shell=True)
-           key_name = key_name.strip()
+           key_name = "wload_key"
            print("Keypair wload_key already exists")
            newline = "  \"key\": " + key_name
            pattern = "  \"key\":"
@@ -224,7 +223,7 @@ def create_key(env_path):
         key_name = subprocess.check_output(comm, shell=True)
         comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
         key_name = subprocess.check_output(comm_check, shell=True)
-        key_name = key_name.strip()
+        key_name = "wload_key"
         newline = "  \"key\": " + key_name
         pattern = "  \"key\":"
         replace(newline, pattern, env_path)
@@ -272,7 +271,7 @@ def replace(newline, pattern, env_path):
 def create_network(env_path):
     # os.system("neutron net-create net1")
     print("Validate Network")
-    if (os.environ['QUOTA_CHECK_DISABLED']!='1'):
+    if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
           validator = validate_network()
     else: validator=1
     if (validator == 1):
