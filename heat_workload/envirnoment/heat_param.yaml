@@ -6,9 +6,9 @@ resource_registry:
 parameters:
   "num_of_slices": 1
   "instance_type": 89b8e19c-6cec-4823-abd3-a22594734ddc
-  "image_id": db0800a3-502d-43d4-a567-1bc7a6d5832f
+  "image_id": 56c933ae-a3ab-4cfd-8e1e-fc86d8340275
   "availability_zone": "nova"
   "volume_size": 1
-  "network_id": f9d35054-07a5-41c6-8770-1c53225e8383
-  "scaling_size": 2
+  "network_id": be7d9cbd-c7e6-49f3-b0a0-f49dffb132c1
+  "scaling_size": 1
   "key": wload_key

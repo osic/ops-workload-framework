@@ -354,7 +354,7 @@ def quota_validate(slice_num):
     #  print pred_volumes
     #  print d
 
-    if (os.environ['QUOTA_CHECK_DISABLED']!=1):
+    if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!=1):
         if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores and d[
         'volumes'] >= pred_volumes)):
             return 1
