@@ -198,7 +198,7 @@ def quota_check():
     print("Networks: \n" + "Current Usage: " + str(curr_networks) + "\n" + "Total Usage: " + str(d['networks']) + "\n")
 
 def create_key(env_path):
-    comm = "openstack keypair create wload_key > wload_key.pem"
+    comm = "openstack keypair create wload_key > /root/wload_key.pem"
     comm_check = "openstack keypair show wload_key"
     try:
        result = subprocess.check_output(comm_check,shell=True)
