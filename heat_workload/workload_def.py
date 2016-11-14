@@ -177,7 +177,7 @@ def create_context():
     print("Image used to create workloads: " + image_id)
     key_name = create_key(env_path)
     print("Key Used to create workloads: " + key_name)
-    print("Key wload_key.pem stored in the current directory")
+    print("Key wload_key.pem stored in the /root")
 
 
 @workload_def.command('quota-check', help="Check quotas before creating workloads ")
