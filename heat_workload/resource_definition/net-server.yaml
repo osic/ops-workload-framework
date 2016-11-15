@@ -72,9 +72,6 @@ resources:
             __client_ip__: { get_param: client_ip }
           template: |
             #!/bin/sh
-            sudo apt-get update
-            sudo apt-get upgrade
-            sudo apt-get install -y nc
             for i in {2..10}024;
             do
                dd if=/dev/urandom of=random.img count=$i bs=10M
