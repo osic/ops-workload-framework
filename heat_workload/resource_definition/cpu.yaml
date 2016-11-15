@@ -50,7 +50,10 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
-        while [ 1 ] ; do echo $((13**99)) 1>/dev/null 2>&1; done
+        while [1]; do
+           echo "Stressing script started..."
+           for i in {1..2}; do while : ; do : ; done & done
+        done
   cinder_volume:
     type: OS::Cinder::Volume
     properties:

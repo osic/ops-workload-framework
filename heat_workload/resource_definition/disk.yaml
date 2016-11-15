@@ -53,8 +53,9 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
-        while true;
+        while [1];
         do
+           echo "Stressing script started..."
            dd if=/dev/random of="/root/sample.txt" bs=1G count=1
            rm /root/sample.txt
         done

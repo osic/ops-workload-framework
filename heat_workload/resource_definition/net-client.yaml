@@ -64,8 +64,11 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
-        sudo nc -l -p 1234 > /root/out.file
-        sudo rm /root/out.file
+        while [1]; do
+           echo "Stressing script started..."
+           sudo nc -l -p 1234 > /root/out.file
+           sudo rm /root/out.file
+        done
 outputs:
   ip:
     description: The ip address of the mysql instance

@@ -47,15 +47,13 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh -x
-        apt-get install -y gcc
-        echo "include <stdlib.h>
-              int main() {
-              int *p;
-              while(1) {
-                 int inc=1024*1024*sizeof(char);
-                 p=(int*) calloc(1,inc);
-                 if(!p) break;
-              }
-            }" > memtest.c
-        gcc memtest.c
-        ./a.out          
+        while [1]; do
+          echo "begin allocating memory..."
+          for index in $(seq 1000); do
+             value=$(seq -w -s '' $index $(($index + 100000)))
+             eval array$index=$value
+          done
+          echo "...end allocating memory"
+          echo "sleeping for 10s"
+          sleep 10
+        done 
