@@ -64,8 +64,8 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
-        sudo nc -l -p 1234 > out.file
-        rm out.file
+        sudo nc -l -p 1234 > /root/out.file
+        sudo rm /root/out.file
 outputs:
   ip:
     description: The ip address of the mysql instance
