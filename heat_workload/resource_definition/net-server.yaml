@@ -75,7 +75,7 @@ resources:
             sudo apt-get update
             sudo apt-get upgrade
             sudo apt-get install -y nc
-            for i in {2..10}
+            for i in {2..10}024;
             do
                dd if=/dev/urandom of=random.img count=$i bs=10M
                nc -w 10 '__client_ip__' 1234 < random.img
