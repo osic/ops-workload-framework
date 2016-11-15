@@ -64,10 +64,8 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
-        sudo apt-get update
-        sudo apt-get upgrade
-        sudo apt-get install -y nc
         sudo nc -l -p 1234 > out.file
+        rm out.file
 outputs:
   ip:
     description: The ip address of the mysql instance
