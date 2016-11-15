@@ -50,6 +50,14 @@ resources:
         - network: { get_param: network_id }
       image: { get_param: image_id }
       flavor: { get_param: instance_type }
+      user_data_format: RAW
+      user_data: |
+        #!/bin/sh
+        while true;
+        do
+           dd if=/dev/random of="/root/sample.txt" bs=1G count=1
+           rm /root/sample.txt
+        done
   cinder_volume:
     type: OS::Cinder::Volume
     properties:
