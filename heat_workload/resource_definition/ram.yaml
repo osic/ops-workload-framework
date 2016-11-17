@@ -47,13 +47,5 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh -x
-        while [1]; do
-          echo "begin allocating memory..."
-          for index in $(seq 1000); do
-             value=$(seq -w -s '' $index $(($index + 100000)))
-             eval array$index=$value
-          done
-          echo "...end allocating memory"
-          echo "sleeping for 10s"
-          sleep 10
-        done 
+        sudo apt-get install -y stress-ng
+        sudo stress-ng -m 55 --vm-bytes 500m --metrics-brief

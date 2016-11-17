@@ -34,6 +34,9 @@ resources:
             port_range_min: 1234
             port_range_max: 1234
           - protocol: tcp
+            port_range_min: 1235
+            port_range_max: 1235
+          - protocol: tcp
             port_range_min: 22
             port_range_max: 22
   port_client:
@@ -66,8 +69,9 @@ resources:
         #!/bin/sh
         while [1]; do
            echo "Stressing script started..."
-           sudo nc -l -p 1234 > /root/out.file
-           sudo rm /root/out.file
+           sudo nc -l -p 1234 > /root/out_small.file
+           sudo nc -l -p 1235 > /root/out_large.file
+           sudo rm /root/out.file /root/out_large.file
         done
 outputs:
   ip:

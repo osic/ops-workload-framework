@@ -38,6 +38,9 @@ resources:
             port_range_min: 1234
             port_range_max: 1234
           - protocol: tcp
+            port_range_min: 1235
+            port_range_max: 1235
+          - protocol: tcp
             port_range_min: 22
             port_range_max: 22
   port_server:
@@ -72,12 +75,9 @@ resources:
             __client_ip__: { get_param: client_ip }
           template: |
             #!/bin/sh
+            dd if=/dev/urandom of=random_small.img count=10 bs=10M
+            dd if=/dev/urandom of=random_large.img count=100 bs=10M
             while [1]; do
-              echo "Stressing script started..."
-              for i in {2..10}024;
-              do
-                 dd if=/dev/urandom of=random.img count=$i bs=10M
-                 nc -w 10 '__client_ip__' 1234 < random.img
-                 rm random.img
-              done
+                nc -w 10 '__client_ip__' 1234 < random_small.img
+                nc -w 10 '__client_ip__' 1235 < random_large.img
             done
