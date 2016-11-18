@@ -1,0 +1,14 @@
+resource_registry:
+  "OS::Nova::Server::Disk": "/opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml"
+  "OS::Nova::Server::Cpu": "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
+  "OS::Nova::Server::Ram": "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
+  "OS::Nova::Server::Slice": "/opt/ops-workload-framework/heat_workload/resource_definition/slice.yaml"
+parameters:
+  "num_of_slices": 1
+  "instance_type": 72965670-7309-497c-8a31-e0991328b30b
+  "image_id": c2fc7367-3064-4d25-8f71-a18a4abee9e2
+  "availability_zone": "nova:compute03"
+  "volume_size": 1
+  "network_id": 5a207772-f9f1-4da0-b917-c1f86209dd20
+  "scaling_size": 1
+  "key": wload_key

@@ -35,11 +35,8 @@ parameters:
   network_id:
     type: string
     label: Network ID or name
-  hosts:
-    type: string
-    description: Hosts to be added in aggregation
 resources:
-  group-slice:
+  group-small:
     type: OS::Heat::AutoScalingGroup
     properties:
       cooldown: 
@@ -47,7 +44,7 @@ resources:
       max_size: 99
       min_size: 1
       resource:
-        type: OS::Nova::Server::Slice
+        type: OS::Nova::Server::Disk
         properties:
           image_id: { get_param: image_id }
           instance_type: { get_param: instance_type }
@@ -55,18 +52,18 @@ resources:
           availability_zone: { get_param: availability_zone }
           volume_size: { get_param: volume_size }
           key: { get_param: key }
-          hosts: { get_param: hosts }
-  scaleup_policy_slice:
+  scaleup_policy_small:
     type: OS::Heat::ScalingPolicy
     properties:
       adjustment_type: change_in_capacity
-      auto_scaling_group_id: { get_resource: group-slice }
+      auto_scaling_group_id: { get_resource: group-small }
       #cooldown: 10
       scaling_adjustment: { get_param: scaling_size }
+
 outputs:
-  scale_up_url_slice:
+  scale_up_url_small:
     description: >
       This URL is the webhook to scale up the autoscaling group.  You
       can invoke the scale-up operation by doing an HTTP POST to this
       URL; no body nor extra headers are needed.
-    value: {get_attr: [scaleup_policy_slice, alarm_url]}
+    value: {get_attr: [scaleup_policy_small, alarm_url]}

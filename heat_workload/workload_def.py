@@ -14,19 +14,27 @@ def workload_def():
 
 
 @workload_def.command('workload-create', help = "Command to create workloads")
-@click.option('--name', type=str, required=True, help = "Desired workload name")
+@click.option('--type', type=str, required=True, help="Desired Instance type [large,medium,small,slice]")
+@click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
-def workload_define(name, insecure, n):
+@click.option('-host', required=False, default='shashank-osa-aio', help = "Select compute host for deployment")
+def workload_define(type, name, insecure, n, host):
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(n)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
-        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
-        env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
+        template= "/opt/ops-workload-framework/heat_workload/main-"+type+".yaml"
+        env = "/opt/ops-workload-framework/heat_workload/envirnoment/heat_param_"+type+".yaml"
+        template_path = os.path.abspath(template)
+        env_path = os.path.abspath(env)
         newline = "  \"num_of_slices\": " + str(n)
         pattern = "  \"num_of_slices\": "
+        replace(newline, pattern, env_path)
+        newline = "  \"availability_zone\": " + "nova:" + str(host)
+        pattern = "  \"availability_zone\":.*"
+        name = name + "." + type
         replace(newline, pattern, env_path)
         if (insecure == "True"):
             comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + " --insecure"
@@ -168,16 +176,21 @@ def delete_context(env_path):
 
 @workload_def.command('context-create', help= "Create Context")
 def create_context():
-    env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
-    flavor_name = create_flavor(env_path)
-    print("Flavor used to create workloads: " + flavor_name)
-    network_id = create_network(env_path)
-    print("Network used to create workloads: " + network_id)
-    image_id = create_image(env_path)
-    print("Image used to create workloads: " + image_id)
-    key_name = create_key(env_path)
-    print("Key Used to create workloads: " + key_name)
-    print("Key wload_key.pem stored in the /root")
+    types = ['small', 'medium', 'large', 'slice']
+    for type in types:
+        print("***********Context create for " + type + " vms***********")
+        path = "/opt/ops-workload-framework/heat_workload/envirnoment/heat_param_"+type+".yaml"
+        env_path = os.path.abspath(path)
+        flavor_name = create_flavor(env_path,type)
+        print("Flavor used to create workloads: " + flavor_name)
+        network_id = create_network(env_path)
+        print("Network used to create workloads: " + network_id)
+        image_id = create_image(env_path,type)
+        print("Image used to create workloads: " + image_id)
+        key_name = create_key(env_path)
+        print("Key Used to create workloads: " + key_name)
+        print("Key wload_key.pem stored in the /root")
+        print("*********************************************************")
 
 
 @workload_def.command('quota-check', help="Check quotas before creating workloads ")
@@ -230,10 +243,18 @@ def create_key(env_path):
     return key_name.strip()
 
 
-def create_flavor(env_path):
-    comm = "openstack flavor create custom.workload.c1 --ram 2048 --disk 10 --vcpu 1 --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+def create_flavor(env_path,type):
+    if type == "small":
+        params = {'name': "custom.workload.small",'ram': 1024,'disk': 2,'vcpu': 1}
+    elif type == "medium":
+        params = {'name': "custom.workload.medium", 'ram': 2048, 'disk': 4, 'vcpu': 4}
+    elif type == "large":
+        params = {'name': "custom.workload.large", 'ram': 4096, 'disk': 6, 'vcpu': 6}
+    else:
+        params = {'name': "custom.workload.slice", 'ram': 8192, 'disk': 8, 'vcpu': 8}
+    comm = "openstack flavor create " + str(params['name']) + " --ram " + str(params['ram']) + " --disk " + str(params['disk']) + " --vcpu " + str(params['vcpu']) + " --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     # os.system("openstack flavor create m1.small_1 --ram 2048 --disk 10 --vcpu 1 --public")
-    comm_check = "openstack flavor show custom.workload.c1"
+    comm_check = "openstack flavor show " + params['name']
     try:
         result = subprocess.check_output(comm_check, shell=True)
         if ("No flavor with a name" in result):
@@ -243,9 +264,9 @@ def create_flavor(env_path):
             pattern = "  \"instance_type\": "
             replace(newline, pattern, env_path)
         else:
-            comm_check = "openstack flavor show custom.workload.c1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+            comm_check = "openstack flavor show "+params['name']+ " | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
             flavor_id = subprocess.check_output(comm_check, shell=True)
-            print("Flavor custom.workload.c1 already present")
+            print("Flavor " + params['name'] + " already present")
             flavor_id = flavor_id.strip()
             newline = "  \"instance_type\": " + flavor_id
             pattern = "  \"instance_type\": "
@@ -290,14 +311,24 @@ def create_network(env_path):
     return net_id
 
 
-def create_image(env_path):
-    comm = "openstack --os-image-api-version 1 image create ubuntu_14.04 --location \"http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
-    comm_check = "openstack image show ubuntu_14.04"
+def create_image(env_path, type):
+    if type == "small":
+        params = {'name':'ubuntu.small','url':'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+    elif type == "medium":
+        params = {'name':'ubuntu.medium','url':'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+    elif type == "large":
+        params = {'name': 'ubuntu.large',
+                  'url': 'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+    else:
+        params = {'name': 'ubuntu.slice',
+                  'url': 'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+    comm = "openstack --os-image-api-version 1 image create " + params['name'] + " --location \"" + params['url'] + "\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    comm_check = "openstack image show " + params['name']
     try:
         result = subprocess.check_output(comm_check, shell=True)
-        comm_check = "openstack image show ubuntu_14.04 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+        comm_check = "openstack image show " + params['name'] + " | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         image_id = subprocess.check_output(comm_check, shell=True)
-        print("Image ubuntu_14.04 already present")
+        print("Image " + params['name'] + " already present")
         image_id = image_id.strip()
         newline = "  \"image_id\": " + image_id
         pattern = "  \"image_id\": "

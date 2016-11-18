@@ -27,9 +27,6 @@ parameters:
   key:
     type: string
     description: Key pair used to ssh into instance.
-  hosts:
-    type: string
-    description: Hosts to be added in aggregation
 resources:
   name_nonce:
     type: OS::Heat::RandomString
@@ -47,7 +44,6 @@ resources:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image_id }
       flavor: { get_param: instance_type }
-      scheduler_hints: { host: { get_param: hosts } } 
       key_name: { get_param: key }
       networks: 
         - network: { get_param: network_id }
@@ -70,4 +66,4 @@ resources:
 outputs: 
   host: 
     description: The host this server lives on. 
-    value: {get_attr: [nova_server, show, 'OS-EXT-SRV-ATTR:hosts']} 
+    value: {get_attr: [nova_server, show, 'OS-EXT-SRV-ATTR:host']} 
