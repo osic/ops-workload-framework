@@ -12,3 +12,4 @@ parameters:
   "network_id": ec3184e6-270c-4cf4-ad1f-f5c4c0ac87f4
   "scaling_size": 1
   "key": wload_key
+  "hosts": "shashank-osa-aio"

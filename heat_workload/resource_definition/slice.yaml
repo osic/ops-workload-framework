@@ -27,6 +27,9 @@ parameters:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
+  hosts:
+    type: string
+    description: Hosts to be added in aggregation
 resources:
   nova_server_disk:
     type: disk.yaml
@@ -46,6 +49,7 @@ resources:
       availability_zone: { get_param: availability_zone }
       volume_size: { get_param: volume_size }
       key: { get_param: key }
+      hosts: { get_param: hosts }
   nova_server_ram:
     type: ram.yaml
     properties:

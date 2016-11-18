@@ -35,6 +35,9 @@ parameters:
   network_id:
     type: string
     label: Network ID or name
+  hosts:
+    type: string
+    description: Hosts to be added in aggregation
 resources:
   group-slice:
     type: OS::Heat::AutoScalingGroup
@@ -52,6 +55,7 @@ resources:
           availability_zone: { get_param: availability_zone }
           volume_size: { get_param: volume_size }
           key: { get_param: key }
+          hosts: { get_param: hosts }
   scaleup_policy_slice:
     type: OS::Heat::ScalingPolicy
     properties:
