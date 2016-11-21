@@ -9,6 +9,6 @@ parameters:
   "image_id": 1205bec5-355f-4315-810b-3933de8d3e33
   "availability_zone": nova:shashank-osa-aio
   "volume_size": 1
-  "network_id": 77b8aee7-135e-47e0-b446-30a99d0680bf
+  "network_id": afe5b15f-4793-45dd-a259-4a03afc0cc32
   "scaling_size": 1
   "key": wload_key

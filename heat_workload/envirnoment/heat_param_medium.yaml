@@ -9,6 +9,6 @@ parameters:
   "image_id": fc52805d-ba3c-4f32-86d1-f2d46ca091d9
   "availability_zone": "nova:compute03"
   "volume_size": 1
-  "network_id": 5e530f60-1a61-4c9f-ae35-f5754d71a6e1
+  "network_id": 0dc69365-faf9-45c6-b394-9768000cf1e4
   "scaling_size": 1
   "key": wload_key

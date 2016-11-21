@@ -184,7 +184,7 @@ def create_context():
         env_path = os.path.abspath(path)
         flavor_name = create_flavor(env_path,type)
         print("Flavor used to create workloads: " + flavor_name)
-        network_id = create_network(env_path)
+        network_id = create_network(env_path,type)
         print("Network used to create workloads: " + network_id)
         image_id = create_image(env_path,type)
         print("Image used to create workloads: " + image_id)
@@ -290,17 +290,17 @@ def replace(newline, pattern, env_path):
     f.close()
 
 
-def create_network(env_path):
+def create_network(env_path,type):
     # os.system("neutron net-create net1")
     print("Validate Network")
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
           validator = validate_network()
     else: validator=1
     if (validator == 1):
-        comm = "neutron net-create net1 | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+        comm = "neutron net-create net1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         net_id = subprocess.check_output(comm, shell=True)
         net_id = net_id.strip()
-        comm = "neutron subnet-create " + net_id + " 192.168.2.0/24 --name subnet1"
+        comm = "neutron subnet-create " + net_id + " 192.168.2.0/24 --name subnet1."+type
         os.system(comm)
         newline = "  \"network_id\": " + net_id
         pattern = "  \"network_id\": "
