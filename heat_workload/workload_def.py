@@ -18,8 +18,9 @@ def workload_def():
 @click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
-@click.option('-host', required=False, default='shashank-osa-aio', help = "Select compute host for deployment")
+@click.option('--host', required=True, type=str, help = "Select compute host for deployment")
 def workload_define(type, name, insecure, n, host):
+    print "HOST"+host
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(n)
     else: validator=1
@@ -32,8 +33,8 @@ def workload_define(type, name, insecure, n, host):
         newline = "  \"num_of_slices\": " + str(n)
         pattern = "  \"num_of_slices\": "
         replace(newline, pattern, env_path)
-        newline = "  \"availability_zone\": " + "nova:" + str(host)
-        pattern = "  \"availability_zone\":.*"
+        newline = "  \"availability_zone\": " + "nova:" + host
+        pattern = "  \"availability_zone\": "
         name = name + "." + type
         replace(newline, pattern, env_path)
         if (insecure == "True"):

@@ -5,10 +5,10 @@ resource_registry:
   "OS::Nova::Server::Slice": "/opt/ops-workload-framework/heat_workload/resource_definition/slice.yaml"
 parameters:
   "num_of_slices": 1
-  "instance_type": 309ce899-99cc-43db-842c-db483fd84c78
-  "image_id": 172eda65-dfcf-40f9-8684-f12a3ad8671b
+  "instance_type": 3b244222-5e83-4f91-bf5f-5f543567c7b6
+  "image_id": fc52805d-ba3c-4f32-86d1-f2d46ca091d9
   "availability_zone": "nova:compute03"
   "volume_size": 1
-  "network_id": ab92df5c-e37b-4807-9fc4-e6dc24fcfbd6
+  "network_id": 5e530f60-1a61-4c9f-ae35-f5754d71a6e1
   "scaling_size": 1
   "key": wload_key
