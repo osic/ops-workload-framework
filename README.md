@@ -23,20 +23,18 @@ It is really hard to understand workload information due to its complexity (larg
 
 Proposed Workloads
 ------------------
-Mixed resource workload: CPU, Memory, Network, disk.
-+ CPU intensive using complex mathematical calculation.
-+ RAM intensive by executing malloc C code that fills up RAM memory.
-+ DISK intensive by filling up cinder volumes using random files.
-+ Stress Network I/O using fragmented file transfer of a large file. 
+Type of workloads:
+1. CPU Intensive workload: Spans 4 cpu workers that stresses the cpu cores.
+2. Memory Intensive workload: Spans 55 memory workers that fills up the cpu.
+3. Network IO workload: Uses netcat command to constantly send and receive large file which stresses the bandwidth.
+4. Disk Intensive workload: Spans 60 disk workers that fills up the disk by creating 1 gb blocks of data.
 
-Tooling
-+ Heat
-
-Test case example
-
-+ Metric: Required time to recover vm after compute node failure.
-
-+ Expected result: All failed vms on error injected compute nodes are living on a working compute node.
+Type of Vms:
+There are 4 different types of VMs in which the workloads are executed:
+1. Large VM ( CPU: 6, RAM: 4g, Disk: 6g)
+2. Medium VM ( CPU: 4, RAM: 2g, Disk: 4g)
+3. Small VM ( CPU: 1, RAM: 1g, Disk: 2g )
+4. Slice VM ( CPU: 8, RAM: 8g, Disk: 8g)
 
 
 Prerequisites
@@ -87,13 +85,14 @@ divided into two section:
 1. The "parameters" section defines the value of the input parameters used in the resource definition and the autoscaling groups heat templates.
 The parameters section should define the attributes along with their values that will be used for booting each resource:
 
-  + num_of_slice: Defines the number of slices of resources to be deployed initially while workload creation.
+  + num_of_slices: Defines the number of slices of resources to be deployed initially while workload creation.
   + instance_type: The flavor of each resource should be specified.
   + image_id: The ID or name of a glance image which will be used to boot the instances.
   + scaling_size: The scaling factor which defines the number of slices that will be generated as a result of scale up operation.
-  + availability_zone: The availability zone or region in which the slices will be deployed.
+  + availability_zone: The availability zone is of the form: zone:host allowing user to specify the compute host for deployment.
   + volume_size: The size of cinder volumes to be attached to each resource.
   + network_id: The ID or name of network whose subnets will be used for booting the instance.
+  + key: The keypair name used to ssh into the vms.
 
 2. The "resource_registry" maps one resource to another. The resource_registry section should specify the absolute path of the particular resource definition when mapping it to another resource.
   + "resource name to map to": "absolute path of resource which is to be mapped"
@@ -131,7 +130,7 @@ workload_def context-create
 workload_def quota-check
 
 #Create Workload 
-workload_def workload-create -name <name_of_workload> -n <num_of_slices>
+workload_def workload-create --name <name_of_workload> -n <num_of_slices> --host <compute-hostname> --type <type(small/medium/large/slice)>
 
 #Check status of workload creation:
 workload_def check-status --name <name_of_workload>
