@@ -52,17 +52,6 @@ resources:
         #!/bin/sh
         sudo apt-get install stress-ng -y
         sudo stress-ng --cpu 4 --cpu-method all
-  cinder_volume:
-    type: OS::Cinder::Volume
-    properties:
-      size: { get_param: volume_size }
-      availability_zone: { get_param: availability_zone }
-  volume_attachment:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      volume_id: { get_resource: cinder_volume }
-      instance_uuid: { get_resource: nova_server }
-      mountpoint: /dev/vdc
 outputs: 
   host: 
     description: The host this server lives on. 

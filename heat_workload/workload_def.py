@@ -13,7 +13,7 @@ def workload_def():
     pass
 
 
-@workload_def.command('workload-create', help = "Command to create workloads")
+@workload_def.command('create', help = "Command to create workloads")
 @click.option('--type', type=str, required=True, help="Desired Instance type [large,medium,small,slice]")
 @click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
@@ -51,7 +51,7 @@ def workload_define(type, name, insecure, n, host):
         print("Delete one of the resources that are full")
 
 
-@workload_def.command('scale-up', help = "Scale up the workloads")
+@workload_def.command('scale', help = "Scale up the workloads")
 @click.option('-sf', type=int, required=False, default=1, help="Adjust scaling factor")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
@@ -152,7 +152,7 @@ def poll_update(name):
         print ("Execution Failed. Please try again")
 
 
-@workload_def.command('workload-delete', help = "Delete workload and context")
+@workload_def.command('destroy', help = "Delete workload and context")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
 def del_workload(name):
     comm_del = "openstack stack delete " + name
@@ -175,8 +175,9 @@ def delete_context(env_path):
     print("Context Deleted....")
 
 
-@workload_def.command('context-create', help= "Create Context")
-def create_context():
+@workload_def.command('create-context', help= "Create Context")
+@click.option('--ext',help="External Network ID/Name")
+def create_context(ext):
     types = ['small', 'medium', 'large', 'slice']
     for type in types:
         print("***********Context create for " + type + " vms***********")
@@ -184,7 +185,7 @@ def create_context():
         env_path = os.path.abspath(path)
         flavor_name = create_flavor(env_path,type)
         print("Flavor used to create workloads: " + flavor_name)
-        network_id = create_network(env_path,type)
+        network_id = create_network(env_path,type,ext)
         print("Network used to create workloads: " + network_id)
         image_id = create_image(env_path,type)
         print("Image used to create workloads: " + image_id)
@@ -194,7 +195,7 @@ def create_context():
         print("*********************************************************")
 
 
-@workload_def.command('quota-check', help="Check quotas before creating workloads ")
+@workload_def.command('check-quota', help="Check quotas before creating workloads ")
 def quota_check():
     curr_instances = 0 if get_count("server") < 0 else get_count("server")
     curr_ports = 0 if get_count("port") < 0 else get_count("port")
@@ -218,7 +219,7 @@ def create_key(env_path):
        result = subprocess.check_output(comm_check,shell=True)
        if ("No keypair" in result):
            print "CREATING KEY"
-           result = subprocess.check_output(comm, shell=True)
+           os.system(comm)
            comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
            key_name = subprocess.check_output(comm_check, shell=True)
            key_name = "wload_key"
@@ -227,14 +228,14 @@ def create_key(env_path):
            replace(newline, pattern, env_path)
        else:
            comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
-           key_name = subprocess.check_output(comm_check, shell=True)
+           os.system(comm)
            key_name = "wload_key"
            print("Keypair wload_key already exists")
            newline = "  \"key\": " + key_name
            pattern = "  \"key\":"
            replace(newline, pattern, env_path)
     except:
-        key_name = subprocess.check_output(comm, shell=True)
+        os.system(comm)
         comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
         key_name = subprocess.check_output(comm_check, shell=True)
         key_name = "wload_key"
@@ -290,9 +291,9 @@ def replace(newline, pattern, env_path):
     f.close()
 
 
-def create_network(env_path,type):
+def create_network(env_path,type,ext):
     # os.system("neutron net-create net1")
-    print("Validate Network")
+    print("Validating Network Quota...")
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
           validator = validate_network()
     else: validator=1
@@ -300,15 +301,25 @@ def create_network(env_path,type):
         comm = "neutron net-create net1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         net_id = subprocess.check_output(comm, shell=True)
         net_id = net_id.strip()
-        comm = "neutron subnet-create " + net_id + " 192.168.2.0/24 --name subnet1."+type
-        os.system(comm)
+        comm_1 = "neutron subnet-create " + net_id + " 192.161.2.0/24 --name subnet1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+        subnet_id = subprocess.check_output(comm_1, shell=True)
+        subnet_id = subnet_id.strip()
         newline = "  \"network_id\": " + net_id
         pattern = "  \"network_id\": "
         replace(newline, pattern, env_path)
+        comm = "neutron router-create router1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+        router_id = subprocess.check_output(comm, shell=True)
+        router_id = router_id.strip()
+        router_gw = "neutron router-gateway-set "+router_id+" "+ext
+        os.system(router_gw)
+        router_int = "neutron router-interface-add "+router_id+" "+subnet_id
+        os.system(router_int)
+        print "Network: "+ net_id + " has the following external gateway "+ext
     elif validator == 0:
         net_id = "Quota will exceed. Please delete one of the networks"
     else:
         net_id = "Delete one of the networks"
+
     return net_id
 
 
