@@ -166,11 +166,13 @@ def scale_up(sf, name, insecure):
 
 @workload_def.command('slice-define', help = "Define slice")
 @click.option('--name', type=str, required=True, help="Name of slice")
-def slice_create(name):
+@click.option('--main', type=str, required=False, default="main-slice")
+@click.option('--envt', type=str, required=False, default="environment")
+def slice_create(name,main,envt):
     name = "slice."+name
-    comm = "cat /opt/ops-workload-framework/heat_workload/templates/environment.yaml > /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
+    comm = "cat /opt/ops-workload-framework/heat_workload/templates/"+envt+".yaml > /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
     os.system(comm)
-    comm = "cat /opt/ops-workload-framework/heat_workload/templates/main-slice.yaml > /opt/ops-workload-framework/heat_workload/main-"+name+".yaml"
+    comm = "cat /opt/ops-workload-framework/heat_workload/templates/"+main+".yaml > /opt/ops-workload-framework/heat_workload/main-"+name+".yaml"
     os.system(comm)
     newline = "        type: /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
     pattern = "        type: OS::Nova::Server::Slice"
@@ -184,15 +186,30 @@ def slice_create(name):
 @click.option('--name', type=str, required=True, help = "Slice in which to add workloads")
 @click.option('--add', type=str, required=True, help="Name of heat template in resource definition")
 def slice_add(name,add):
+    name_foo = name
     name="slice."+name
     path = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/"+ name + ".yaml")
     add_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/resource_definition/" + add + ".yaml")
+    N=5
+    suffix=''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(N))
     with open(path, "a") as file:
-        N=5
         resource = add.replace('.yaml','')
-        block = "  "+str(resource)+": \n "+"    "+"type"+": "+add_path+" \n  "+"   "+"properties"+":"+" \n "+"      "+"image_id: { get_param: image_id } \n"+"       "+"instance_type: {get_param: instance_type} \n"+"       "+"network_id: {get_param: network_id} \n"+"       "+"availability_zone: {get_param: availability_zone} \n"+"       "+"key: {get_param: key} \n"+"       "+"volume_size: { get_param: volume_size } \n"
+        #block = "  "+str(resource)+": \n "+"    "+"type"+": "+add_path+" \n  "+"   "+"properties"+":"+" \n "+"      "+"image_id: { get_param: image_id } \n"+"       "+"instance_type: {get_param: instance_type} \n"+"       "+"network_id: {get_param: network_id} \n"+"       "+"availability_zone: {get_param: availability_zone} \n"+"       "+"key: {get_param: key} \n"+"       "+"volume_size: { get_param: volume_size } \n"
+        with open(add_path) as f:
+            lines = f.readlines()
+        i = 0
+        block = ""
+        for line in lines:
+            i = i + 1
+            count = len(line) - len(line.lstrip())
+            if i >= 31 and i<=88 and count > 2 and "get_param" in line:
+                if "- " in line: line = line.replace("  - ", "")
+                line = line.replace("\n", "")
+                block = block + line + "\n"
+        block = "  " + resource + "-" + suffix + ": \n" + "    "+"type"+": "+add_path+" \n"+"    "+"properties"+":"+" \n"+block
+        f.close()
         file.write(block)
-        print "Workload: "+add+" added to slice: "+name.replace("slice","")
+        print "Workload: "+add+" added to slice: "+name_foo
 
 @workload_def.command('slice-list', help = "List Slices")
 def slice_list():
@@ -294,9 +311,9 @@ def del_workload(name):
 def delete_context(env_path):
     stream = open(env_path, 'r')
     data = yaml.load(stream)
-    comm_del_flavor = "openstack flavor delete " + data['parameters']['instance_type']
-    comm_del_image = "openstack image delete " + data['parameters']['image_id']
-    comm_del_network = "openstack network delete " + data['parameters']['network_id']
+    comm_del_flavor = "openstack flavor delete " + data['parameters']['flavor']
+    comm_del_image = "openstack image delete " + data['parameters']['image']
+    comm_del_network = "openstack network delete " + data['parameters']['network']
     os.system(comm_del_flavor)
     os.system(comm_del_image)
     os.system(comm_del_network)
@@ -348,27 +365,23 @@ def create_key(env_path):
        if ("No keypair" in result):
            print "CREATING KEY"
            os.system(comm)
-           comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
-           key_name = subprocess.check_output(comm_check, shell=True)
            key_name = "wload_key"
-           newline = "  \"key\": " + key_name
-           pattern = "  \"key\":"
+           newline = "  \"key_name\": " + key_name
+           pattern = "  \"key_name\":"
            replace(newline, pattern, env_path)
        else:
-           comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
-           os.system(comm)
            key_name = "wload_key"
            print("Keypair wload_key already exists")
-           newline = "  \"key\": " + key_name
-           pattern = "  \"key\":"
+           newline = "  \"key_name\": " + key_name
+           pattern = "  \"key_name\":"
            replace(newline, pattern, env_path)
     except:
         os.system(comm)
         comm_check = "openstack keypair show wload_key | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print $2}'"
         key_name = subprocess.check_output(comm_check, shell=True)
         key_name = "wload_key"
-        newline = "  \"key\": " + key_name
-        pattern = "  \"key\":"
+        newline = "  \"key_name\": " + key_name
+        pattern = "  \"key_name\":"
         replace(newline, pattern, env_path)
     return key_name.strip()
 
@@ -390,22 +403,22 @@ def create_flavor(env_path,type):
         if ("No flavor with a name" in result):
             flavor_id = subprocess.check_output(comm, shell=True)
             flavor_id = flavor_id.strip()
-            newline = "  \"instance_type\": " + flavor_id
-            pattern = "  \"instance_type\": "
+            newline = "  \"flavor\": " + flavor_id
+            pattern = "  \"flavor\": "
             replace(newline, pattern, env_path)
         else:
             comm_check = "openstack flavor show "+params['name']+ " | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
             flavor_id = subprocess.check_output(comm_check, shell=True)
             print("Flavor " + params['name'] + " already present")
             flavor_id = flavor_id.strip()
-            newline = "  \"instance_type\": " + flavor_id
-            pattern = "  \"instance_type\": "
+            newline = "  \"flavor\": " + flavor_id
+            pattern = "  \"flavor\": "
             replace(newline, pattern, env_path)
     except:
         flavor_id = subprocess.check_output(comm, shell=True)
         flavor_id = flavor_id.strip()
-        newline = "  \"instance_type\": " + flavor_id
-        pattern = "  \"instance_type\": "
+        newline = "  \"flavor\": " + flavor_id
+        pattern = "  \"flavor\": "
         replace(newline, pattern, env_path)
     return flavor_id.strip()
 
@@ -432,8 +445,10 @@ def create_network(env_path,type,ext):
         comm_1 = "neutron subnet-create " + net_id + " 192.161.2.0/24 --name subnet1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         subnet_id = subprocess.check_output(comm_1, shell=True)
         subnet_id = subnet_id.strip()
-        newline = "  \"network_id\": " + net_id
-        pattern = "  \"network_id\": "
+        comm_1 = "neutron subnet-update " + subnet_id + " --dns-nameservers list=true 8.8.8.8 8.8.4.4"
+        os.system(comm_1)
+        newline = "  \"network\": " + net_id
+        pattern = "  \"network\": "
         replace(newline, pattern, env_path)
         comm = "neutron router-create router1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
         router_id = subprocess.check_output(comm, shell=True)
@@ -470,14 +485,14 @@ def create_image(env_path, type):
         image_id = subprocess.check_output(comm_check, shell=True)
         print("Image " + params['name'] + " already present")
         image_id = image_id.strip()
-        newline = "  \"image_id\": " + image_id
-        pattern = "  \"image_id\": "
+        newline = "  \"image\": " + image_id
+        pattern = "  \"image\": "
         replace(newline,pattern,env_path)
     except:
         image_id = subprocess.check_output(comm, shell=True)
         image_id = image_id.strip()
-        newline = "  \"image_id\": " + image_id
-        pattern = "  \"image_id\": "
+        newline = "  \"image\": " + image_id
+        pattern = "  \"image\": "
         replace(newline, pattern, env_path)
     # os.system("openstack --os-image-api-version 1 image create ubuntu --location \"http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img\" --disk-format qcow2 --container-format bare --public")
     return image_id.strip()

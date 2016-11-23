@@ -5,25 +5,25 @@ parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
-  volume_size:
+  size:
     type: number
     description: Size of the volume to be created.
-  image_id:
+  image:
     type: string
     label: Image ID
     description: Image to be used for compute instance
     constraints:
       - custom_constraint: glance.image
-  key:
+  key_name:
     type: string
     description: Key pair used to ssh into instance.
-  instance_type:
+  flavor:
     type: string
     label: Flavor Type
     description: Flavor Type
     constraints:
       - custom_constraint: nova.flavor
-  network_id:
+  network:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
@@ -31,43 +31,43 @@ resources:
   nova_server_disk:
     type: disk.yaml
     properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
-      volume_size: { get_param: volume_size }
-      key: { get_param: key }
+      size: { get_param: size }
+      key_name: { get_param: key_name }
   nova_server_cpu:
     type: cpu.yaml
     properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
-      volume_size: { get_param: volume_size }
-      key: { get_param: key }
+      size: { get_param: size }
+      key_name: { get_param: key_name }
   nova_server_ram:
     type: ram.yaml
     properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
-      key: { get_param: key }
+      key_name: { get_param: key_name }
   nova_client_nw:
     type: net-client.yaml
     properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
-      key: { get_param: key }
+      key_name: { get_param: key_name }
   nova_server_nw:
     type: net-server.yaml
     properties:
-      image_id: { get_param: image_id }
-      instance_type: { get_param: instance_type }
-      network_id: { get_param: network_id }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
-      key: { get_param: key }
+      key_name: { get_param: key_name }
       client_ip: {get_attr: [nova_client_nw, ip]}

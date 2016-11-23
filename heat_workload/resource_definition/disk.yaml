@@ -5,28 +5,28 @@ parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
-  key:
+  key_name:
     type: string
     description: Key pair used to ssh into instance.
-  volume_size:
+  size:
     type: number
     description: Size of the volume to be created.
     default: 1
     constraints:
       - range: { min: 1 }
-  image_id:
+  image:
     type: string
     label: Image ID
     description: Image to be used for compute instance
     constraints:
       - custom_constraint: glance.image
-  instance_type:
+  flavor:
     type: string
     label: Instance Type
     description: Type of instance (flavor) to be used
     constraints:
       - custom_constraint: nova.flavor
-  network_id:
+  network:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
@@ -45,11 +45,11 @@ resources:
           params:
             $NONCE: { get_resource: name_nonce}
       availability_zone: { get_param: availability_zone }
-      key_name: { get_param: key }
+      key_name: { get_param: key_name }
       networks:
-        - network: { get_param: network_id }
-      image: { get_param: image_id }
-      flavor: { get_param: instance_type }
+        - network: { get_param: network }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
       user_data_format: RAW
       user_data: |
         #!/bin/sh
