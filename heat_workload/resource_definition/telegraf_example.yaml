@@ -15,6 +15,11 @@ parameters:
    default: 44b0bffa-cb5f-44f9-ba3e-d371a4149624
 
 resources:
+ my_key:
+   type: OS::Nova::KeyPair
+   properties:
+     save_private_key: true
+     name: my_key
  server:
    type: OS::Nova::Server
    properties:
@@ -22,20 +27,26 @@ resources:
      flavor: { get_param: flavor }
      networks:
         - network: { get_param: network_id }
+     key_name: test
      user_data_format: RAW
-     user_data: |
-       #!/bin/sh
-       sudo apt-get update
-       sudo apt-get install git
-       wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
-       sudo dpkg -i telegraf_1.0.1_amd64.deb
-       sudo apt-get install -f
-       telegraf config > /etc/telegraf/telegraf.conf
-       sed -i -e 's/localhost/172.29.237.246/g' /etc/telegraf/telegraf.conf
-       cat /etc/telegraf/telegraf.conf
-       service telegraf restart
-       tail -f /var/log/telegraf/telegraf.log
-
+     user_data:
+       str_replace:
+         params:
+           __image__: { get_param: image }
+           __flavor__: { get_param: flavor }
+           __network__: { get_param: network_id }
+         template: |
+           #!/bin/sh
+           sudo apt-get update
+           sudo apt-get install git
+           wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+           sudo dpkg -i telegraf_1.0.1_amd64.deb
+           sudo apt-get install -f
+           telegraf config > /etc/telegraf/telegraf.conf
+           sed -i -e 's/localhost/172.29.237.246/g' /etc/telegraf/telegraf.conf
+           cat /etc/telegraf/telegraf.conf
+           service telegraf restart
+           tail -f /var/log/telegraf/telegraf.log
 outputs:
  single_console_type:
    value: { get_attr: server, console_urls, novnc }
@@ -43,3 +54,6 @@ outputs:
  all_console_urls:
    value: { get_attr: [server, console_urls] }
    description: all available console URLs for the server
+ private_key:
+   description: Private key
+   value: { get_attr: [ my_key, private_key ] }
