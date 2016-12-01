@@ -35,8 +35,14 @@ parameters:
   network_id:
     type: string
     label: Network ID or name
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1 }
 resources:
-  group-small:
+  group-slice:
     type: OS::Heat::AutoScalingGroup
     properties:
       cooldown: 
@@ -44,7 +50,7 @@ resources:
       max_size: 99
       min_size: 1
       resource:
-        type: OS::Nova::Server::Disk
+        type: OS::Nova::Server::Slice
         properties:
           image_id: { get_param: image_id }
           instance_type: { get_param: instance_type }
@@ -52,18 +58,18 @@ resources:
           availability_zone: { get_param: availability_zone }
           volume_size: { get_param: volume_size }
           key: { get_param: key }
-  scaleup_policy_small:
+  scaleup_policy_slice:
     type: OS::Heat::ScalingPolicy
     properties:
       adjustment_type: change_in_capacity
-      auto_scaling_group_id: { get_resource: group-small }
+      auto_scaling_group_id: { get_resource: group-slice }
       #cooldown: 10
       scaling_adjustment: { get_param: scaling_size }
 
 outputs:
-  scale_up_url_small:
+  scale_up_url_slice:
     description: >
       This URL is the webhook to scale up the autoscaling group.  You
       can invoke the scale-up operation by doing an HTTP POST to this
       URL; no body nor extra headers are needed.
-    value: {get_attr: [scaleup_policy_small, alarm_url]}
+    value: {get_attr: [scaleup_policy_slice, alarm_url]}

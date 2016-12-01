@@ -6,6 +6,8 @@ import fileinput
 import sys
 import requests
 import yaml
+import string
+import random
 
 
 @click.group()
@@ -14,20 +16,21 @@ def workload_def():
 
 
 @workload_def.command('create', help = "Command to create workloads")
-@click.option('--type', type=str, required=True, help="Desired Instance type [large,medium,small,slice]")
+@click.option('--slice', type=str, required=True, help="Slice that will be used for deployment")
 @click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
 @click.option('--host', required=True, type=str, help = "Select compute host for deployment")
-def workload_define(type, name, insecure, n, host):
+@click.option('--envt', required=True, type=str, help="Environment file name used for creating slice")
+def workload_define(slice, name, insecure, n, host, envt):
     print "HOST"+host
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(n)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
-        template= "/opt/ops-workload-framework/heat_workload/main-"+type+".yaml"
-        env = "/opt/ops-workload-framework/heat_workload/envirnoment/heat_param_"+type+".yaml"
+        template= "/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml"
+        env = "/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml"
         template_path = os.path.abspath(template)
         env_path = os.path.abspath(env)
         newline = "  \"num_of_slices\": " + str(n)
@@ -35,7 +38,7 @@ def workload_define(type, name, insecure, n, host):
         replace(newline, pattern, env_path)
         newline = "  \"availability_zone\": " + "nova:" + host
         pattern = "  \"availability_zone\": "
-        name = name + "." + type
+        name = name + "." + "." + host
         replace(newline, pattern, env_path)
         if (insecure == "True"):
             comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + " --insecure"
@@ -49,6 +52,47 @@ def workload_define(type, name, insecure, n, host):
         print("Quota will exceed. Please reduce the number of slices")
     else:
         print("Delete one of the resources that are full")
+
+@workload_def.command('set-creds', help="Required for Control plane workload")
+@click.option('--path',required=True, type=str, help="Path to control plane template")
+def set_creds(path):
+    os_auth = os.environ['OS_AUTH_URL']
+    os_ten_id = os.environ['OS_TENANT_ID']
+    os_ten_name = os.environ['OS_TENANT_NAME']
+    os_username = os.environ['OS_USERNAME']
+    os_password = os.environ['OS_PASSWORD']
+    os_reg = os.environ['OS_REGION_NAME']
+    os_endp = os.environ['OS_ENDPOINT_TYPE']
+    os_int = os.environ['OS_INTERFACE']
+    os_iden = os.environ['OS_IDENTITY_API_VERSION']
+    newline = "            export OS_AUTH_URL=" + os_auth
+    pattern = "            export OS_AUTH_URL=.*"
+    replace(newline,pattern,path)
+    newline = "            export OS_TENANT_ID=" + os_ten_id
+    pattern = "            export OS_TENANT_ID=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_TENANT_NAME=" + os_ten_name
+    pattern = "            export OS_TENANT_NAME=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_USERNAME=" + os_username
+    pattern = "            export OS_USERNAME=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_PASSWORD=" + os_password
+    pattern = "            export OS_PASSWORD=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_REGION_NAME=" + os_reg
+    pattern = "            export OS_REGION_NAME=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_ENDPOINT_TYPE=" + os_endp
+    pattern = "            export OS_ENDPOINT_TYPE=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_INTERFACE=" + os_int
+    pattern = "            export OS_INTERFACE=.*"
+    replace(newline, pattern, path)
+    newline = "            export OS_IDENTITY_API_VERSION=" + os_iden
+    pattern = "            export OS_IDENTITY_API_VERSION=.*"
+    replace(newline, pattern, path)
+
 
 
 @workload_def.command('scale', help = "Scale up the workloads")
@@ -120,6 +164,90 @@ def scale_up(sf, name, insecure):
     else:
         print("Delete one of the resources that are full")
 
+@workload_def.command('slice-define', help = "Define slice")
+@click.option('--name', type=str, required=True, help="Name of slice")
+def slice_create(name):
+    name = "slice."+name
+    comm = "cat /opt/ops-workload-framework/heat_workload/templates/environment.yaml > /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
+    os.system(comm)
+    comm = "cat /opt/ops-workload-framework/heat_workload/templates/main-slice.yaml > /opt/ops-workload-framework/heat_workload/main-"+name+".yaml"
+    os.system(comm)
+    newline = "        type: /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
+    pattern = "        type: OS::Nova::Server::Slice"
+    path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-" + name + ".yaml")
+    replace(newline,pattern,path)
+    print "Slice Definition done..."
+
+
+
+@workload_def.command('slice-add', help = "Add workloads to slice")
+@click.option('--name', type=str, required=True, help = "Slice in which to add workloads")
+@click.option('--add', type=str, required=True, help="Name of heat template in resource definition")
+def slice_add(name,add):
+    name="slice."+name
+    path = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/"+ name + ".yaml")
+    add_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/resource_definition/" + add + ".yaml")
+    with open(path, "a") as file:
+        N=5
+        resource = add.replace('.yaml','')
+        block = "  "+str(resource)+": \n "+"    "+"type"+": "+add_path+" \n  "+"   "+"properties"+":"+" \n "+"      "+"image_id: { get_param: image_id } \n"+"       "+"instance_type: {get_param: instance_type} \n"+"       "+"network_id: {get_param: network_id} \n"+"       "+"availability_zone: {get_param: availability_zone} \n"+"       "+"key: {get_param: key} \n"+"       "+"volume_size: { get_param: volume_size } \n"
+        file.write(block)
+        print "Workload: "+add+" added to slice: "+name.replace("slice","")
+
+@workload_def.command('slice-list', help = "List Slices")
+def slice_list():
+    comm = "ls /opt/ops-workload-framework/heat_workload/slices/ | cut -d \".\" -f 2"
+    result = subprocess.check_output(comm, shell=True)
+    print result
+
+@workload_def.command('slice-destroy', help = "Destroy a created slice")
+@click.option('--name', required=True,help="Name of slice to delete")
+def slice_destroy(name):
+    del_slice = "rm /opt/ops-workload-framework/heat_workload/slices/slice."+name+".yaml"
+    del_main = "rm /opt/ops-workload-framework/heat_workload/main-slice."+name+".yaml"
+    os.system(del_slice)
+    os.system(del_main)
+    print "Deleted Slice: "+name
+
+@workload_def.command('slice-remove',help = "Remove specific from slice")
+@click.option('--slice', required=True,help="Name of slice")
+@click.option('--name', required=True,help="Name of workload to delete")
+def slice_remove(slice,name):
+    slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
+    f = fileinput.input(slice, inplace=True)
+    pattern = "  "+name+":"
+    i = 0
+    flag=0
+    for line in f:
+        if pattern in line:
+            flag=1
+            i = i + 1
+        if i == 10:
+            i = 0
+        if i > 0:
+            if i <= 10:
+                i = i + 1
+            continue
+        print(line),
+    f.close()
+    if flag == 0: print "Workload: "+name+" not found in slice: "+slice
+    else: print "Workload: "+name+" removed from slice: "+slice
+
+@workload_def.command('slice-show', help="List workloads inside slice")
+@click.option('--slice', required=True, help="Name of Slice")
+def slice_show(slice):
+    slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
+    i = 0
+    with open(slice) as f:
+        lines = f.readlines()
+    print("Workloads: ")
+    for line in lines:
+        i = i + 1
+        count = len(line) - len(line.lstrip())
+        if i >= 31 and count == 2:
+            print line.replace(":", "").strip()
+    f.close()
+
 
 @workload_def.command('check-status', help = "Check status of workload creation")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
@@ -176,7 +304,7 @@ def delete_context(env_path):
 
 
 @workload_def.command('create-context', help= "Create Context")
-@click.option('--ext',help="External Network ID/Name")
+@click.option('--ext',help="External Network ID/Name", required= True)
 def create_context(ext):
     types = ['small', 'medium', 'large', 'slice']
     for type in types:

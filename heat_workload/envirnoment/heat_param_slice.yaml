@@ -7,7 +7,7 @@ parameters:
   "num_of_slices": 1
   "instance_type": 4ce00036-8615-43f7-9974-31bc7dae145f
   "image_id": c8f2c7b9-d760-4ea1-bd50-47b0fdde9bd2
-  "availability_zone": "nova:compute03"
+  "availability_zone": nova:compute02
   "volume_size": 1
   "network_id": e2abdc82-c701-4527-bca7-869bb352b1b5
   "scaling_size": 1

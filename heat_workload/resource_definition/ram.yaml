@@ -24,6 +24,12 @@ parameters:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1 }
 resources:
   name_nonce:
     type: OS::Heat::RandomString
