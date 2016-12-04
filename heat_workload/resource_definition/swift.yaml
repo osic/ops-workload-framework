@@ -1,0 +1,99 @@
+heat_template_version: 2015-04-30
+description: Control Plane (swift) workload.
+
+parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
+  size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1 }
+  image:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    constraints:
+      - custom_constraint: glance.image
+  flavor:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    constraints:
+      - custom_constraint: nova.flavor
+  network:
+    type: string
+    label: Network ID/Name
+    description: Network to be used for compute instance.
+resources:
+  name_nonce:
+    type: OS::Heat::RandomString
+    properties:
+            length: 7
+            sequence: lowercase
+  nova_server:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: control-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key_name }
+      networks:
+        - network: { get_param: network }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __image_id__: { get_param: image }
+            __flavor__: { get_param: flavor }
+            __availability-zone__: { get_param: availability_zone }
+            __network__: { get_param: network }
+            __key-name__: { get_param: key_name }
+          template: |
+            #!/bin/bash
+            sudo apt-get update
+            sudo apt-get install python-swiftclient -y
+            sudo apt-get install python-openstackclient -y
+            export OS_AUTH_URL=https://cloud1.osic.org:5000/v3
+            export OS_TENANT_ID=ddd81f9ab03f45e09196169abceaec6f
+            export OS_TENANT_NAME="osic-engineering"
+            export OS_USERNAME="shashank.tavildar"
+            export OS_PASSWORD="Sh@nks0791"
+            export OS_REGION_NAME="RegionOne"
+            export OS_ENDPOINT_TYPE=publicURL
+            export OS_INTERFACE=public
+            export OS_IDENTITY_API_VERSION=2
+            i=0
+            while true; do
+                swift stat
+                swift post swift.workload.$i
+                touch sample.txt
+                swift upload swift.workload.$i sample.txt
+                swift list swift.workload.$i
+                swift stat swift.workload.$i
+                swift list
+                swift delete swift.workload.$i
+                swift list
+                i++
+                sleep 20
+                swift stat
+                swift post swift.workload.$i
+                touch sample.txt
+                swift upload swift.workload.$i sample.txt
+                swift list swift.workload.$i
+                swift stat swift.workload.$i
+                swift list
+                swift delete swift.workload.$i
+                swift list
+                i++ 
+            done
