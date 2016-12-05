@@ -265,6 +265,12 @@ def slice_show(slice):
             print line.replace(":", "").strip()
     f.close()
 
+@workload_def.command('workload-list', help = "List all workloads present in resource_definition")
+def workload_list():
+    path = "/opt/ops-workload-framework/heat_workload/resource_definition/*.yaml"
+    comm = "ls "+path+" | grep -iwr '^description:'"
+    result=subprocess.check_output(comm, shell=True)
+    print result
 
 @workload_def.command('check-status', help = "Check status of workload creation")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
