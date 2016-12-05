@@ -8,6 +8,7 @@ parameters:
   size:
     type: number
     description: Size of the volume to be created.
+    default: 1
   image:
     type: string
     label: Image ID
