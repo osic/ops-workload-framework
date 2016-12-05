@@ -298,12 +298,13 @@ def poll_update(name):
 
 
 @workload_def.command('destroy', help = "Delete workload and context")
-@click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
-def del_workload(name):
+@click.option('--name', type=str, required=True, help="Name of the workload stack assigned during creation")
+@click.option('--type', type=str, required=True, help="Type of context to delete")
+def del_workload(name,type):
     comm_del = "openstack stack delete " + name
     os.system(comm_del)
     time.sleep(120)
-    env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
+    env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param_"+type+".yaml")
     delete_context(env_path)
     print("Workload " + name + " deleted...")
 
