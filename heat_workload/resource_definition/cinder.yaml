@@ -81,6 +81,8 @@ resources:
               cinder list
               cinder delete WL_volume1
               cinder delete WL_volume2
+              openstack server create --image '__image_id__' --flavor '__flavor__' --key-name '__key-name__' --nic net-id='__network__' --availability-zone '__availability-zone__' nova.workload
+              nova volume-attach nova.workload WL_volume3 auto
               cinder delete WL_volume3
               cinder list
               sleep 5
