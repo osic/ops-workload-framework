@@ -9,7 +9,6 @@ import yaml
 import string
 import random
 
-
 @click.group()
 def workload_def():
     pass
@@ -38,7 +37,6 @@ def workload_define(slice, name, insecure, n, host, envt):
         replace(newline, pattern, env_path)
         newline = "  \"availability_zone\": " + "nova:" + host
         pattern = "  \"availability_zone\": "
-        name = name + "." + "." + host
         replace(newline, pattern, env_path)
         if (insecure == "True"):
             comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + " --insecure"
@@ -47,6 +45,7 @@ def workload_define(slice, name, insecure, n, host, envt):
         print(comm)
         print("Creating Stack...")
         os.system(comm)
+
         print("Stack Creation Finished")
     elif validator == 0:
         print("Quota will exceed. Please reduce the number of slices")
@@ -99,15 +98,18 @@ def set_creds(path):
 @click.option('-sf', type=int, required=False, default=1, help="Adjust scaling factor")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
-def scale_up(sf, name, insecure):
+@click.option('--envt', required=True,help="Environmet used while stack creation")
+@click.option('--slice', required=True, help="Slice name used while stack creation")
+def scale_up(sf, name, insecure,slice,envt):
     print("Validating Quotas")
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(sf)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
-        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main.yaml")
-        env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param.yaml")
+        #envt = d.get(name)
+        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml")
+        env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml")
         comm_1 = "openstack stack show " + name
         comm_url = comm_1 + " | grep \"output_value: \" | awk 'BEGIN{ FS=\"output_value: \"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
         url = subprocess.check_output(comm_url, shell=True)

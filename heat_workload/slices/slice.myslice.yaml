@@ -58,19 +58,3 @@ resources:
       network: { get_param: network }
       image: { get_param: image }
       flavor: { get_param: flavor }
-  disk-489O1: 
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml 
-    properties: 
-      availability_zone: { get_param: availability_zone }
-      key_name: { get_param: key_name }
-      network: { get_param: network }
-      image: { get_param: image }
-      flavor: { get_param: flavor }
-  perfkit-PA41B: 
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/perfkit.yaml 
-    properties: 
-      availability_zone: { get_param: availability_zone }
-      image: { get_param: image }
-      flavor: { get_param: flavor }
-      key_name: { get_param: key_name }
-      network: { get_param: network }
