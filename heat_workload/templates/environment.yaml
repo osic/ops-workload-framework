@@ -33,4 +33,7 @@ parameters:
     default: 1
     constraints:
       - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:

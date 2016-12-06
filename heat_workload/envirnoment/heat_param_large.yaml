@@ -1,9 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": 23bf0c2b-d343-426d-88e2-e14c91387191
-  "image": cc94f672-1a02-4efd-b819-66e4ad1d3ed9
-  "availability_zone": nova:shashank-osa-aio
+  "flavor": m1.large
+  "image": f6b10ce2-f7b9-4eed-a26b-eff7cb062fbb
+  "availability_zone": nova:compute01
   "size": 1
-  "network": 47391ed9-dcb0-4d6e-8ace-f9d376b3d83a
+  "network": e68e3b29-3395-4ae6-9bb7-d01f19556c72
   "scaling_size": 1
   "key_name": wload_key
+  "influx_ip": 172.22.9.91

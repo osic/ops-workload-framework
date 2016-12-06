@@ -41,6 +41,9 @@ parameters:
     default: 1
     constraints:
       - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:
   group-slice:
     type: OS::Heat::AutoScalingGroup
@@ -58,6 +61,7 @@ resources:
           availability_zone: { get_param: availability_zone }
           size: { get_param: size }
           key_name: { get_param: key_name }
+          influx_ip: {get_param: influx_ip }
   scaleup_policy_slice:
     type: OS::Heat::ScalingPolicy
     properties:
