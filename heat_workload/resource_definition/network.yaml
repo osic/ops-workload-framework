@@ -73,6 +73,8 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
+        sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+        sudo apt-get update
         while [1]; do
            echo "Stressing script started..."
            sudo nc -l -p 1234 > /root/out_small.file
@@ -105,6 +107,8 @@ resources:
           params:
             __client_ip__: { get_attr: [nova_client,first_address]  }
           template: |
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get update
             #!/bin/sh
             echo '__client_ip' > /root/ip
             dd if=/dev/urandom of=random_small.img count=10 bs=10M
