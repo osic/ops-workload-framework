@@ -1,9 +1,9 @@
 parameters:
   "num_of_slices": 1
-  "flavor": 23bf0c2b-d343-426d-88e2-e14c91387191
-  "image": cc94f672-1a02-4efd-b819-66e4ad1d3ed9
+  "flavor": e7a53062-c576-4d72-8878-03bad520d92a
+  "image": 6e6ca7df-47d5-4434-b9bf-7618681d4a54
   "availability_zone": nova:shashank-osa-aio
   "size": 1
-  "network": 47391ed9-dcb0-4d6e-8ace-f9d376b3d83a
+  "network": 513dc1e3-2036-406a-be57-ffe540c3e1e1
   "scaling_size": 1
   "key_name": wload_key

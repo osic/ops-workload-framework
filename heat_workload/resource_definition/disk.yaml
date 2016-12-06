@@ -53,5 +53,7 @@ resources:
       user_data_format: RAW
       user_data: |
         #!/bin/sh
+        sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+        sudo apt-get update
         sudo apt-get install stress-ng -y
         sudo stress-ng --hdd 60 --hdd-bytes 1g --metrics-brief
