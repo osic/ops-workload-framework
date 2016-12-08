@@ -2,9 +2,9 @@ parameters:
   "num_of_slices": 1
   "flavor": m1.large
   "image": f6b10ce2-f7b9-4eed-a26b-eff7cb062fbb
-  "availability_zone": nova:compute01
+  "availability_zone": nova:compute02
   "size": 1
-  "network": e68e3b29-3395-4ae6-9bb7-d01f19556c72
+  "network": bc1b0934-3343-4fca-806e-3bad82205261
   "scaling_size": 1
   "key_name": wload_key
   "influx_ip": 172.22.9.91

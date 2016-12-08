@@ -1,13 +1,13 @@
 heat_template_version: 2015-04-30
-description: RAM intensive resource.
+description: A sample slice.
 
 parameters:
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
-  key_name:
-    type: string
-    description: Key pair used to ssh into instance.
+  size:
+    type: number
+    description: Size of the volume to be created.
   image:
     type: string
     label: Image ID
@@ -24,36 +24,34 @@ parameters:
     type: string
     label: Network ID/Name
     description: Network to be used for compute instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
   size:
     type: number
     description: Size of the volume to be created.
     default: 1
     constraints:
       - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:
-  name_nonce:
-    type: OS::Heat::RandomString
-    properties:
-            length: 7
-            sequence: lowercase
-  nova_server:
-    type: OS::Nova::Server
-    properties:
-      name:
-        str_replace:
-          template: ram-$NONCE
-          params:
-            $NONCE: { get_resource: name_nonce}
+  cpu-CB877: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml 
+    properties: 
       availability_zone: { get_param: availability_zone }
       image: { get_param: image }
-      networks:
-        - network: { get_param: network }
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
-      user_data_format: RAW
-      user_data: |
-        #!/bin/sh -x
-        sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
-        sudo apt-get update
-        sudo apt-get install -y stress-ng
-        sudo stress-ng -m 55 --vm-bytes 500m
+      network: { get_param: network }
+      influx_ip: { get_param: influx_ip }
+  network-4GXDS: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/network.yaml 
+    properties: 
+      network: { get_param: network }
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      network: { get_param: network }

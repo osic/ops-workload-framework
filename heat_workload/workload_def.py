@@ -19,9 +19,10 @@ def workload_def():
 @click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
-@click.option('--host', required=True, type=str, help = "Select compute host for deployment")
+@click.option('--host', required = False, default = " ", type= str, help = "Compute host name")
+@click.option('--group', required=False, default = " ", type=str, help = "Select group of compute hosts for deployment")
 @click.option('--envt', required=True, type=str, help="Environment file name used for creating slice")
-def workload_define(slice, name, insecure, n, host, envt):
+def workload_define(slice, name, insecure, n, host, envt, group):
     print "HOST"+host
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
         validator = quota_validate(n)
@@ -34,23 +35,69 @@ def workload_define(slice, name, insecure, n, host, envt):
         env_path = os.path.abspath(env)
         newline = "  \"num_of_slices\": " + str(n)
         pattern = "  \"num_of_slices\": "
+        hostList= ""
+        print "Updating "
+        setConfig()
         replace(newline, pattern, env_path)
-        newline = "  \"availability_zone\": " + "nova:" + host
-        pattern = "  \"availability_zone\": "
-        replace(newline, pattern, env_path)
+        if host != " ":
+            newline = "  \"availability_zone\": " + "nova:" + host
+            pattern = "  \"availability_zone\": "
+            replace(newline, pattern, env_path)
+        elif group != " ":
+            hostList = getHosts(group)
+        elif host == " " and group == " ":
+            newline = "  \"availability_zone\": nova"
+            pattern = "  \"availability_zone\": "
+            replace(newline, pattern, env_path)
         if (insecure == "True"):
-            comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + " --insecure"
+            if len(hostList) > 0:
+                for host in hostList:
+                    newline = "  \"availability_zone\": " + "nova:" + host
+                    pattern = "  \"availability_zone\": "
+                    replace(newline,pattern,env_path)
+                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host + " --insecure"
+                    print(comm)
+                    os.system(comm)
+            else:
+                comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name  + "." + host + " --insecure"
+                print(comm)
+                os.system(comm)
         else:
-            comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name
-        print(comm)
+            if len(hostList) > 0:
+                for host in hostList:
+                    newline = "  \"availability_zone\": " + "nova:" + host
+                    pattern = "  \"availability_zone\": "
+                    replace(newline,pattern,env_path)
+                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
+                    print(comm)
+                    os.system(comm)
+            else:
+                comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
+                print(comm)
+                os.system(comm)
+
         print("Creating Stack...")
-        os.system(comm)
 
         print("Stack Creation Finished")
     elif validator == 0:
         print("Quota will exceed. Please reduce the number of slices")
     else:
         print("Delete one of the resources that are full")
+
+@workload_def.command('gen-host', help = "Generate hosts file with [all] group")
+def gen_host():
+    comm_1 = "echo [all] > /opt/ops-workload-framework/heat_workload/host"
+    result = subprocess.check_output(comm_1,shell=True)
+    comm_2 = "openstack host list | grep  \"compute\" | cut -d \"|\" -f 2 >> /opt/ops-workload-framework/heat_workload/host"
+    result = subprocess.check_output(comm_2,shell=True)
+    print "Host file generated in /opt/ops-workload-framework/heat_workload"
+
+def getHosts(group):
+    comm = "ansible "+ group + " -i /opt/ops-workload-framework/heat_workload/host --list-hosts  | grep -v \"^\s*hosts\" > /opt/ops-workload-framework/heat_workload/out"
+    subprocess.check_output(comm, shell=True)
+    hosts = [line.strip() for line in open('/opt/ops-workload-framework/heat_workload/out')]
+    os.system("rm /opt/ops-workload-framework/heat_workload/out")
+    return hosts
 
 @workload_def.command('set-creds', help="Required for Control plane workload")
 @click.option('--path',required=True, type=str, help="Path to control plane template")
@@ -206,6 +253,7 @@ def slice_add(name,add):
             count = len(line) - len(line.lstrip())
             if i >= 31 and i<=88 and (count ==6 or count >=8) and "get_param" in line:
                 if "- " in line: line = line.replace("  - ", "")
+                if "__" in line: line = line.replace("__","").replace(" ","",6)
                 line = line.replace("\n", "")
                 block = block + line + "\n"
         block = "  " + resource + "-" + suffix + ": \n" + "    "+"type"+": "+add_path+" \n"+"    "+"properties"+":"+" \n"+block
@@ -263,9 +311,30 @@ def slice_show(slice):
     for line in lines:
         i = i + 1
         count = len(line) - len(line.lstrip())
-        if i >= 31 and count == 2:
+        if i >= 39 and count == 2:
             print line.replace(":", "").strip()
     f.close()
+
+def getConfig():
+    config = open("/opt/ops-workload-framework/heat_workload/config.yaml")
+    config_data = yaml.load(config)
+    return config_data
+
+def setConfig():
+    config_data = getConfig()
+    cpu = "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
+    pattern = "            sudo stress-ng --cpu"
+    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all"
+    replace(newline,pattern,cpu)
+    ram = "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
+    pattern = "        sudo stress-ng -m "
+    newline = "        sudo stress-ng -m " + str(config_data['ram_workers']) + " --vm-bytes " + str(config_data['ram_bytes'])
+    replace(newline,pattern,ram)
+    disk = "/opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml"
+    pattern = "        sudo stress-ng --hdd "
+    newline = "        sudo stress-ng --hdd " + str(config_data['disk_workers']) + " --hdd-bytes " + str(config_data['disk_bytes'])
+    replace(newline, pattern,disk)
+
 
 @workload_def.command('workload-list', help = "List all workloads present in resource_definition")
 def workload_list():

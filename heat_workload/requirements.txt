@@ -9,3 +9,4 @@ graphviz>=0.4.0 # MIT License
 setuptools!=24.0.0,>=16.0 # PSF/ZPL
 pycrypto>=2.6 # Public Domain
 python-openstackclient>=3.3.0
+ansible>=2.0.0.1
