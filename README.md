@@ -2,7 +2,7 @@
 
 About this Repository
 ---------------------
-The purpose of the repo is to generate workloads in our OpenStack deployments that will help us gather meaningful data and close to production scenarios, that will help us to address each of the OSIC KPIs at scale.
+The purpose of the repo is to create a framework that will generate workloads in our OpenStack deployments.
 
 Contents
 ---------
