@@ -23,16 +23,21 @@ def workload_def():
 @click.option('--group', required=False, default = " ", type=str, help = "Select group of compute hosts for deployment")
 @click.option('--envt', required=True, type=str, help="Environment file name used for creating slice")
 def workload_define(slice, name, insecure, n, host, envt, group):
-    print "HOST"+host
+    env = "/opt/ops-workload-framework/heat_workload/envirnoment/" + envt + ".yaml"
+    env_path = os.path.abspath(env)
+    data = open(env_path)
+    stream = yaml.load(data)
+    flavor = stream['parameters']['flavor']
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
-        validator = quota_validate(n)
+        print "Validating Quotas..."
+        validator = quota_validate(n,flavor,slice)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
         template= "/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml"
-        env = "/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml"
+
         template_path = os.path.abspath(template)
-        env_path = os.path.abspath(env)
+
         newline = "  \"num_of_slices\": " + str(n)
         pattern = "  \"num_of_slices\": "
         hostList= ""
@@ -41,12 +46,15 @@ def workload_define(slice, name, insecure, n, host, envt, group):
         setConfig()
         replace(newline, pattern, env_path)
         if host != " ":
+            print "Deploying in: " +host
             newline = "  \"availability_zone\": " + "nova:" + host
             pattern = "  \"availability_zone\": "
             replace(newline, pattern, env_path)
         elif group != " ":
+            print "Deploying in group: "+group
             hostList = getHosts(group)
         elif host == " " and group == " ":
+            print "Scheduler will perform deployment.."
             newline = "  \"availability_zone\": nova"
             pattern = "  \"availability_zone\": "
             replace(newline, pattern, env_path)
@@ -147,14 +155,18 @@ def set_creds(path):
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
 def scale_up(sf, name, insecure):
+    slice = name.split('.')[1]
+    comm = "openstack stack show "+name+" -f shell | grep \"flavor\" | cut -d \":\" -f 2"
+    flavor = subprocess.check_output(comm,shell=True)
+    flavor = flavor.replace("\"","").replace("\\","").replace(",","").replace("\n","")
     print("Validating Quotas")
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
-        validator = quota_validate(sf)
+        validator = quota_validate(sf,flavor,slice)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
         #envt = d.get(name)
-        slice=name.split('.')[1]
+
         template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml")
         #env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml")
         comm_1 = "openstack stack show " + name
@@ -169,7 +181,8 @@ def scale_up(sf, name, insecure):
         #replace(newline, pattern, env_path)
 
         if (insecure == "True"):
-            comm = "openstack stack update "+ name + " --parameter \"scaling_size=\""+str(sf)+" --existing --insecure"
+            comm = "openstack stack update "+ name + " -t "+template_path+ " --parameter \"scaling_size=\""+str(sf)+" --existing --insecure"
+
 
             # for i in range(0, sf):
             os.system(comm)
@@ -191,7 +204,7 @@ def scale_up(sf, name, insecure):
 
             #time.sleep(20)
         else:
-            comm = "openstack stack update " + name + " --parameter \"scaling_size=\"" + str(sf) + " --existing"
+            comm = "openstack stack update " + name + " -t "+template_path+ " --parameter \"scaling_size=\"" + str(sf) + " --existing"
             os.system(comm)
             print("Update started...")
             # for i in range(0, sf):
@@ -307,6 +320,7 @@ def slice_remove(slice,name):
 def slice_show(slice):
     slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
     i = 0
+    count=0
     with open(slice) as f:
         lines = f.readlines()
     print("Workloads: ")
@@ -314,8 +328,25 @@ def slice_show(slice):
         i = i + 1
         count = len(line) - len(line.lstrip())
         if i >= 39 and count == 2:
+            count=count+1
             print line.replace(":", "").strip()
     f.close()
+
+
+def getCount(slice):
+    slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
+    i = 0
+    count = 0
+    with open(slice) as f:
+        lines = f.readlines()
+    print("Workloads: ")
+    for line in lines:
+        i = i + 1
+        count = len(line) - len(line.lstrip())
+        if i >= 39 and count == 2:
+            count=count+1
+    f.close()
+    return count
 
 def getConfig():
     config = open("/opt/ops-workload-framework/heat_workload/config.yaml")
@@ -429,8 +460,7 @@ def quota_check():
     curr_volumes = 1 * curr_instances
     curr_networks = 0 if get_count("network") < 0 else get_count("network")
     d = quota_parse()
-    print(
-    "Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
+    print("Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
     print("Ports: \n" + "Current Usage: " + str(curr_ports) + "\n" + "Total Usage: " + str(d['ports']) + "\n")
     print("Ram: \n" + "Current Usage: " + str(curr_ram) + "\n" + "Total Usage: " + str(d['ram']) + "\n")
     print("Cores: \n" + "Current Usage: " + str(curr_cores) + "\n" + "Total Usage: " + str(d['cores']) + "\n")
@@ -600,29 +630,41 @@ def quota_parse():
     d['ports'] = sys.maxint if ports == -1 else ports
     return d
 
+def getInfo(flavor):
+    d={}
+    comm_ram = "openstack flavor show "+flavor+" -f shell | grep \"ram\" | cut -d \"=\" -f2"
+    ram = subprocess.check_output(comm_ram,shell=True)
+    comm_cores = "openstack flavor show "+flavor+" -f shell | grep \"vcpus\" | cut -d \"=\" -f2"
+    cores = subprocess.check_output(comm_cores, shell=True)
+    d['ram']=int(ram.replace("\n","").replace("\"",""))
+    d['cores']=int(cores.replace("\n","").replace("\"",""))
+    return d
 
-def quota_validate(slice_num):
+def quota_validate(slice_num,flavor,slice):
+    #env = "/opt/ops-workload-framework/heat_workload/envirnoment/" + envt + ".yaml"
+    #env_path = os.path.abspath(env)
     curr_instances = get_count("server")
     #  print(curr_instances)
+    flavor=getInfo(flavor)
     curr_ports = get_count("port")
-    curr_ram = 2048 * curr_instances
-    curr_cores = 2 * curr_instances
-    curr_volumes = 1 * curr_instances
+    curr_ram = flavor['ram'] * curr_instances
+    curr_cores = flavor['cores'] * curr_instances
+    #curr_volumes = 1 * curr_instances
     d = quota_parse()
     #  print int(slice_num)
-    pred_instances = curr_instances + int(slice_num * 3)
+    slice_count = getCount(slice)
+    pred_instances = curr_instances + int(slice_num * slice_count)
     #  print pred_instances
-    pred_ram = curr_ram + int(slice_num * 3 * 2048)
-    pred_cores = curr_cores + int(slice_num * 3 * 2)
-    pred_volumes = curr_volumes + int(slice_num * 3 * 1)
+    pred_ram = curr_ram + int(slice_num * slice_count * flavor['ram'])
+    pred_cores = curr_cores + int(slice_num * slice_count * flavor['cores'])
+    #pred_volumes = curr_volumes + int(slice_num * 3 * 1)
     #   print pred_ram
     #  print pred_cores
     #  print pred_volumes
     #  print d
 
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!=1):
-        if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores and d[
-        'volumes'] >= pred_volumes)):
+        if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores)):
             return 1
         else:
             if (d['instances'] < pred_instances):
@@ -631,8 +673,6 @@ def quota_validate(slice_num):
                 print "Ram Quota will exceed: Predicted Usage: " + str(pred_ram) + "/" + str(d['ram'])
             if (d['cores'] < pred_cores):
                 print "Cpu Quota will exceed: Predicted Usage: " + str(pred_cores) + "/" + str(d['cores'])
-            if (d['volumes'] < pred_volumes):
-                print "Volume Quota will exceed: Predicted Usage: " + str(pred_volumes) + "/" + str(d['volumes'])
             return 0
     else:
         return 1
