@@ -2,7 +2,7 @@ parameters:
   "num_of_slices": 1
   "flavor": m1.large
   "image": f6b10ce2-f7b9-4eed-a26b-eff7cb062fbb
-  "availability_zone": nova:compute02
+  "availability_zone": nova
   "size": 1
   "network": bc1b0934-3343-4fca-806e-3bad82205261
   "scaling_size": 1
