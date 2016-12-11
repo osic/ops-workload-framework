@@ -70,5 +70,4 @@ resources:
             sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
             service telegraf restart
             sudo apt-get install stress-ng -y
-            sudo stress-ng --cpu 4 --cpu-method all
             sudo stress-ng --hdd 60 --hdd-bytes 1g --metrics-brief
