@@ -1,5 +1,5 @@
 heat_template_version: 2015-04-30
-description: Perfkit workload
+description: CPU intensive resource.
 
 parameters:
   availability_zone:
@@ -8,6 +8,7 @@ parameters:
   size:
     type: number
     description: Size of the volume to be created.
+    default: 1
   image:
     type: string
     label: Image ID
@@ -27,6 +28,9 @@ parameters:
   key_name:
     type: string
     description: Key pair used to ssh into instance.
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:
   name_nonce:
     type: OS::Heat::RandomString
@@ -48,32 +52,60 @@ resources:
       networks: 
         - network: { get_param: network }
       user_data_format: RAW
-      user_data: |
-        #!/bin/sh
-        export LC_ALL=C
-        export CINDER_ENDPOINT_TYPE=internalURL
-        export NOVA_ENDPOINT_TYPE=internalURL
-        export OS_ENDPOINT_TYPE=internalURL
-        export OS_INTERFACE=internalURL
-        export OS_USERNAME=admin
-        export OS_PASSWORD=openstack
-        export OS_PROJECT_NAME=admin
-        export OS_TENANT_NAME=admin
-        export OS_AUTH_URL=http://172.29.236.100:5000/v3
-        export OS_NO_CACHE=1
-        export OS_USER_DOMAIN_NAME=Default
-        export OS_PROJECT_DOMAIN_NAME=Default
-        export OS_REGION_NAME=RegionOne
-        export OS_IDENTITY_API_VERSION=3
-        export OS_AUTH_VERSION=3
-        sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
-        sudo apt-get udpate
-        sudo apt-get -y install git
-        sudo apt-get -y install python
-        sudo apt-get -y install python-pip
-        git clone https://github.com/GoogleCloudPlatform/PerfKitBenchmarker.git
-        sudo pip install -r PerfKitBenchmarker/perfkitbenchmarker/providers/openstack/requirements.txt
-        ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=provision
+      user_data:
+          str_replace:
+            params:
+              __influx_ip__: { get_param: influx_ip }
+              __image__: { get_param: image }
+              __flavor__: { get_param: flavor }
+              __network__: { get_param: network }
+            template: |
+              #!/bin/sh
+              export LC_ALL=C
+              export CINDER_ENDPOINT_TYPE=publicURL
+              export NOVA_ENDPOINT_TYPE=publicURL
+              export OS_ENDPOINT_TYPE=publicURL
+              export OS_USERNAME=admin
+              export OS_PASSWORD=34431ce352f44a1995befd3be42540988de035a60e
+              export OS_PROJECT_NAME=admin
+              export OS_TENANT_NAME=admin
+              export OS_AUTH_URL=https://cloud8.weareopenstack.org:9007/v3
+              export OS_NO_CACHE=1
+              export OS_USER_DOMAIN_NAME=Default
+              export OS_PROJECT_DOMAIN_NAME=Default
+              export OS_IDENTITY_API_VERSION=3
+              export OS_AUTH_VERSION=3
+              sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+              sudo apt-get -y update
+              sudo apt-get -y install git
+              sudo apt-get -y install python
+              sudo apt-get -y install python-pip
+              git clone https://github.com/GoogleCloudPlatform/PerfKitBenchmarker.git
+              sudo rm -rf ~/.pip
+              sudo pip uninstall $(pip freeze) -y
+              sudo pip install -r PerfKitBenchmarker/requirements.txt
+              sudo pip install -r PerfKitBenchmarker/perfkitbenchmarker/providers/openstack/requirements.txt
+              sudo pip install stevedore
+              sudo pip install positional
+              sudo pip install os_client_config
+              sudo pip install oslo.config
+              sudo pip install unicodecsv
+              sudo pip install netifaces
+              sudo apt-get install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
+              sudo easy_install greenlet
+              sudo easy_install gevent
+              sudo pip install netifaces
+              sudo pip install warlock
+              sudo pip install markupsafe
+              sudo pip install contextlib2
+              sudo pip install -r PerfKitBenchmarker/requirements.txt
+              sudo pip install -r PerfKitBenchmarker/perfkitbenchmarker/providers/openstack/requirements.txt
+              sudo pip install numpy
+              ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=provision
+              ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=prepare
+              while true; do
+                ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=run
+              done
 outputs: 
   host: 
     description: The host this server lives on. 
