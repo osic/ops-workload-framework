@@ -78,6 +78,12 @@ resources:
               sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
               sudo apt-get -y update
               sudo apt-get -y install git
+              wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+              sudo dpkg -i telegraf_1.0.1_amd64.deb
+              sudo apt-get install -f
+              telegraf config > /etc/telegraf/telegraf.conf
+              sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+              service telegraf restart
               sudo apt-get -y install python
               sudo apt-get -y install python-pip
               git clone https://github.com/GoogleCloudPlatform/PerfKitBenchmarker.git
@@ -91,7 +97,7 @@ resources:
               sudo pip install oslo.config
               sudo pip install unicodecsv
               sudo pip install netifaces
-              sudo apt-get install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
+              sudo apt-get -y install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
               sudo easy_install greenlet
               sudo easy_install gevent
               sudo pip install netifaces
@@ -101,6 +107,10 @@ resources:
               sudo pip install -r PerfKitBenchmarker/requirements.txt
               sudo pip install -r PerfKitBenchmarker/perfkitbenchmarker/providers/openstack/requirements.txt
               sudo pip install numpy
+              cmd1="sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf;sudo apt-get -y dist-upgrade;sudo apt-get -y update;sudo apt-get -y install git;sudo wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb;sudo dpkg -i telegraf_1.0.1_amd64.deb;sudo telegraf config > /etc/telegraf/telegraf.conf;sudo sed -i -e 's/localhost/__influx_ip__/g' /etc/telegraf/telegraf.conf;sudo service telegraf restart"
+              cmd="vm.RemoteCommand(\""$cmd1"\")"
+              sed -i "/PrepareVMEnvironment/a#    $cmd" PerfKitBenchmarker/perfkitbenchmarker/benchmark_spec.py
+              sed -i '/vm.RemoteCommand(/s/#//g' PerfKitBenchmarker/perfkitbenchmarker/benchmark_spec.py
               ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=provision
               ./PerfKitBenchmarker/pkb.py --cloud=OpenStack --image='__image__' --openstack_image_username=ubuntu --openstack_network='__network__' --benchmarks=ping --os_type=debian --openstack_volume_size=1 --machine_type='__flavor__' --run_stage=prepare
               while true; do
