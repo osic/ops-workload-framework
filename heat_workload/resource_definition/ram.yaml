@@ -30,6 +30,9 @@ parameters:
     default: 1
     constraints:
       - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:
   name_nonce:
     type: OS::Heat::RandomString
@@ -51,9 +54,20 @@ resources:
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       user_data_format: RAW
-      user_data: |
-        #!/bin/sh -x
-        sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
-        sudo apt-get update
-        sudo apt-get install -y stress-ng
-        sudo stress-ng -m 55 --vm-bytes 500m --metrics-brief
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+          template: |
+            #!/bin/sh
+            sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            sudo apt-get install -y stress-ng
+            sudo stress-ng -m 55 --vm-bytes 500m --metrics-brief

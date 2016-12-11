@@ -107,9 +107,18 @@ resources:
           params:
             __client_ip__: { get_attr: [nova_client,first_address]  }
           template: |
+            #!/bin/sh
+            sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            service telegraf restart
             sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
             sudo apt-get update
-            #!/bin/sh
             echo '__client_ip' > /root/ip
             dd if=/dev/urandom of=random_small.img count=10 bs=10M
             dd if=/dev/urandom of=random_large.img count=100 bs=10M
