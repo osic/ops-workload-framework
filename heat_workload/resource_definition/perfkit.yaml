@@ -1,5 +1,5 @@
 heat_template_version: 2015-04-30
-description: CPU intensive resource.
+description:  Perfkit resource.
 
 parameters:
   availability_zone:

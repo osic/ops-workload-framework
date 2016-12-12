@@ -1,0 +1,5 @@
+cpu_load: 100
+ram_workers: 55
+ram_bytes: "500m"
+disk_workers: 65
+disk_bytes: "1g"

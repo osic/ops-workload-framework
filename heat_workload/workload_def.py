@@ -8,7 +8,8 @@ import requests
 import yaml
 import string
 import random
-
+sys.path.append("/opt/ops-workload-framework/heat_workload/plugins/")
+from parser_task import parser_task
 @click.group()
 def workload_def():
     pass
@@ -19,32 +20,73 @@ def workload_def():
 @click.option('--name', type=str, required=True, help = "Desired stack name")
 @click.option('--insecure', required=False, default=True, type=str)
 @click.option('-n', required=False, default=1, type=int, help  = "Desired number of slices")
-@click.option('--host', required=True, type=str, help = "Select compute host for deployment")
+@click.option('--host', required = False, default = " ", type= str, help = "Compute host name")
+@click.option('--group', required=False, default = " ", type=str, help = "Select group of compute hosts for deployment")
 @click.option('--envt', required=True, type=str, help="Environment file name used for creating slice")
-def workload_define(slice, name, insecure, n, host, envt):
-    print "HOST"+host
+def workload_define(slice, name, insecure, n, host, envt, group):
+    env = "/opt/ops-workload-framework/heat_workload/envirnoment/" + envt + ".yaml"
+    env_path = os.path.abspath(env)
+    data = open(env_path)
+    stream = yaml.load(data)
+    flavor = stream['parameters']['flavor']
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
-        validator = quota_validate(n)
+        print "Validating Quotas..."
+        validator = quota_validate(n,flavor,slice)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
         template= "/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml"
-        env = "/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml"
+
         template_path = os.path.abspath(template)
-        env_path = os.path.abspath(env)
+
         newline = "  \"num_of_slices\": " + str(n)
         pattern = "  \"num_of_slices\": "
+        hostList= ""
+        name=name+"."+slice
+        print "Updating "
+        setConfig()
         replace(newline, pattern, env_path)
-        newline = "  \"availability_zone\": " + "nova:" + host
-        pattern = "  \"availability_zone\": "
-        replace(newline, pattern, env_path)
+        if host != " ":
+            print "Deploying in: " +host
+            newline = "  \"availability_zone\": " + "nova:" + host
+            pattern = "  \"availability_zone\": "
+            replace(newline, pattern, env_path)
+        elif group != " ":
+            print "Deploying in group: "+group
+            hostList = getHosts(group)
+        elif host == " " and group == " ":
+            print "Scheduler will perform deployment.."
+            newline = "  \"availability_zone\": nova"
+            pattern = "  \"availability_zone\": "
+            replace(newline, pattern, env_path)
         if (insecure == "True"):
-            comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + " --insecure"
+            if len(hostList) > 0:
+                for host in hostList:
+                    newline = "  \"availability_zone\": " + "nova:" + host
+                    pattern = "  \"availability_zone\": "
+                    replace(newline,pattern,env_path)
+                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host + " --insecure"
+                    print(comm)
+                    os.system(comm)
+            else:
+                comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name  + "." + host + " --insecure"
+                print(comm)
+                os.system(comm)
         else:
-            comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name
-        print(comm)
+            if len(hostList) > 0:
+                for host in hostList:
+                    newline = "  \"availability_zone\": " + "nova:" + host
+                    pattern = "  \"availability_zone\": "
+                    replace(newline,pattern,env_path)
+                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
+                    print(comm)
+                    os.system(comm)
+            else:
+                comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
+                print(comm)
+                os.system(comm)
+
         print("Creating Stack...")
-        os.system(comm)
 
         print("Stack Creation Finished")
     elif validator == 0:
@@ -52,64 +94,56 @@ def workload_define(slice, name, insecure, n, host, envt):
     else:
         print("Delete one of the resources that are full")
 
-@workload_def.command('set-creds', help="Required for Control plane workload")
-@click.option('--path',required=True, type=str, help="Path to control plane template")
-def set_creds(path):
-    os_auth = os.environ['OS_AUTH_URL']
-    os_ten_id = os.environ['OS_TENANT_ID']
-    os_ten_name = os.environ['OS_TENANT_NAME']
-    os_username = os.environ['OS_USERNAME']
-    os_password = os.environ['OS_PASSWORD']
-    os_reg = os.environ['OS_REGION_NAME']
-    os_endp = os.environ['OS_ENDPOINT_TYPE']
-    os_int = os.environ['OS_INTERFACE']
-    os_iden = os.environ['OS_IDENTITY_API_VERSION']
-    newline = "            export OS_AUTH_URL=" + os_auth
-    pattern = "            export OS_AUTH_URL=.*"
-    replace(newline,pattern,path)
-    newline = "            export OS_TENANT_ID=" + os_ten_id
-    pattern = "            export OS_TENANT_ID=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_TENANT_NAME=" + os_ten_name
-    pattern = "            export OS_TENANT_NAME=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_USERNAME=" + os_username
-    pattern = "            export OS_USERNAME=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_PASSWORD=" + os_password
-    pattern = "            export OS_PASSWORD=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_REGION_NAME=" + os_reg
-    pattern = "            export OS_REGION_NAME=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_ENDPOINT_TYPE=" + os_endp
-    pattern = "            export OS_ENDPOINT_TYPE=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_INTERFACE=" + os_int
-    pattern = "            export OS_INTERFACE=.*"
-    replace(newline, pattern, path)
-    newline = "            export OS_IDENTITY_API_VERSION=" + os_iden
-    pattern = "            export OS_IDENTITY_API_VERSION=.*"
-    replace(newline, pattern, path)
+@workload_def.command('gen-host', help = "Generate hosts file with [all] group")
+def gen_host():
+    comm_1 = "echo [all] > /opt/ops-workload-framework/heat_workload/host"
+    result = subprocess.check_output(comm_1,shell=True)
+    comm_2 = "openstack host list | grep  \"compute\" | cut -d \"|\" -f 2 >> /opt/ops-workload-framework/heat_workload/host"
+    result = subprocess.check_output(comm_2,shell=True)
+    print "Host file generated in /opt/ops-workload-framework/heat_workload"
 
+def getHosts(group):
+    comm = "ansible "+ group + " -i /opt/ops-workload-framework/heat_workload/host --list-hosts  | grep -v \"^\s*hosts\" > /opt/ops-workload-framework/heat_workload/out"
+    subprocess.check_output(comm, shell=True)
+    hosts = [line.strip() for line in open('/opt/ops-workload-framework/heat_workload/out')]
+    os.system("rm /opt/ops-workload-framework/heat_workload/out")
+    return hosts
 
+@workload_def.command('task-start',help="Run a control plane task")
+@click.argument('file')
+@click.option('-n',required=False,default=1,help="Number of task runs")
+def task_start(file,n):
+    count=0
+    path=os.path.abspath("/opt/ops-workload-framework/heat_workload/tasks/"+file+".yaml")
+    if n==-1:
+        while True:
+            obj = parser_task(path)
+            obj.parse()
+    else:
+        while count<n:
+            obj=parser_task(path)
+            obj.parse()
+            count=count+1
 
 @workload_def.command('scale', help = "Scale up the workloads")
 @click.option('-sf', type=int, required=False, default=1, help="Adjust scaling factor")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
 @click.option('--insecure', required=False, default="True", type=str, help="Self signed certificate")
-@click.option('--envt', required=True,help="Environmet used while stack creation")
-@click.option('--slice', required=True, help="Slice name used while stack creation")
-def scale_up(sf, name, insecure,slice,envt):
+def scale_up(sf, name, insecure):
+    slice = name.split('.')[1]
+    comm = "openstack stack show "+name+" -f shell | grep \"flavor\" | cut -d \":\" -f 2"
+    flavor = subprocess.check_output(comm,shell=True)
+    flavor = flavor.replace("\"","").replace("\\","").replace(",","").replace("\n","")
     print("Validating Quotas")
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!='1'):
-        validator = quota_validate(sf)
+        validator = quota_validate(sf,flavor,slice)
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
         #envt = d.get(name)
+
         template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml")
-        env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml")
+        #env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml")
         comm_1 = "openstack stack show " + name
         comm_url = comm_1 + " | grep \"output_value: \" | awk 'BEGIN{ FS=\"output_value: \"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
         url = subprocess.check_output(comm_url, shell=True)
@@ -117,11 +151,14 @@ def scale_up(sf, name, insecure,slice,envt):
         #stream = open(env_path, 'r')
         #data = yaml.load(stream)
         #sf = int(data['parameters']['num_of_slices']) + int(sf)
-        newline = "  \"scaling_size\": " + str(sf)
-        pattern = "  \"scaling_size\": "
-        replace(newline, pattern, env_path)
+        #newline = "  \"scaling_size\": " + str(sf)
+        #pattern = "  \"scaling_size\": "
+        #replace(newline, pattern, env_path)
+
         if (insecure == "True"):
-            comm = "openstack stack update -t " + template_path + " -e " + env_path + " " + name + " --insecure"
+            comm = "openstack stack update "+ name + " -t "+template_path+ " --parameter \"scaling_size=\""+str(sf)+" --existing --insecure"
+
+
             # for i in range(0, sf):
             os.system(comm)
             print("Update started...")
@@ -142,7 +179,7 @@ def scale_up(sf, name, insecure,slice,envt):
 
             #time.sleep(20)
         else:
-            comm = "openstack stack update -t " + template_path + " -e " + env_path + " " + name
+            comm = "openstack stack update " + name + " -t "+template_path+ " --parameter \"scaling_size=\"" + str(sf) + " --existing"
             os.system(comm)
             print("Update started...")
             # for i in range(0, sf):
@@ -206,6 +243,7 @@ def slice_add(name,add):
             count = len(line) - len(line.lstrip())
             if i >= 31 and i<=88 and (count ==6 or count >=8) and "get_param" in line:
                 if "- " in line: line = line.replace("  - ", "")
+                if "__" in line: line = line.replace("__","").replace(" ","",6)
                 line = line.replace("\n", "")
                 block = block + line + "\n"
         block = "  " + resource + "-" + suffix + ": \n" + "    "+"type"+": "+add_path+" \n"+"    "+"properties"+":"+" \n"+block
@@ -257,22 +295,61 @@ def slice_remove(slice,name):
 def slice_show(slice):
     slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
     i = 0
+    count=0
     with open(slice) as f:
         lines = f.readlines()
     print("Workloads: ")
     for line in lines:
         i = i + 1
         count = len(line) - len(line.lstrip())
-        if i >= 31 and count == 2:
+        if i >= 39 and count == 2:
+            count=count+1
             print line.replace(":", "").strip()
     f.close()
+
+
+def getCount(slice):
+    slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
+    i = 0
+    count = 0
+    with open(slice) as f:
+        lines = f.readlines()
+    print("Workloads: ")
+    for line in lines:
+        i = i + 1
+        count = len(line) - len(line.lstrip())
+        if i >= 39 and count == 2:
+            count=count+1
+    f.close()
+    return count
+
+def getConfig():
+    config = open("/opt/ops-workload-framework/heat_workload/config.yaml")
+    config_data = yaml.load(config)
+    return config_data
+
+def setConfig():
+    config_data = getConfig()
+    cpu = "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
+    pattern = "            sudo stress-ng --cpu"
+    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all"
+    replace(newline,pattern,cpu)
+    ram = "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
+    pattern = "        sudo stress-ng -m "
+    newline = "        sudo stress-ng -m " + str(config_data['ram_workers']) + " --vm-bytes " + str(config_data['ram_bytes'])
+    replace(newline,pattern,ram)
+    disk = "/opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml"
+    pattern = "        sudo stress-ng --hdd "
+    newline = "        sudo stress-ng --hdd " + str(config_data['disk_workers']) + " --hdd-bytes " + str(config_data['disk_bytes'])
+    replace(newline, pattern,disk)
+
 
 @workload_def.command('workload-list', help = "List all workloads present in resource_definition")
 def workload_list():
     path = "/opt/ops-workload-framework/heat_workload/resource_definition/*.yaml"
     comm = "ls "+path+" | grep -iwr '^description:'"
     result=subprocess.check_output(comm, shell=True)
-    print result
+    print result.replace("description: ","       Description: ")
 
 @workload_def.command('check-status', help = "Check status of workload creation")
 @click.option('--name', type=str, required=True, help="Name of the workload assigned during creation")
@@ -358,8 +435,7 @@ def quota_check():
     curr_volumes = 1 * curr_instances
     curr_networks = 0 if get_count("network") < 0 else get_count("network")
     d = quota_parse()
-    print(
-    "Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
+    print("Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
     print("Ports: \n" + "Current Usage: " + str(curr_ports) + "\n" + "Total Usage: " + str(d['ports']) + "\n")
     print("Ram: \n" + "Current Usage: " + str(curr_ram) + "\n" + "Total Usage: " + str(d['ram']) + "\n")
     print("Cores: \n" + "Current Usage: " + str(curr_cores) + "\n" + "Total Usage: " + str(d['cores']) + "\n")
@@ -529,29 +605,41 @@ def quota_parse():
     d['ports'] = sys.maxint if ports == -1 else ports
     return d
 
+def getInfo(flavor):
+    d={}
+    comm_ram = "openstack flavor show "+flavor+" -f shell | grep \"ram\" | cut -d \"=\" -f2"
+    ram = subprocess.check_output(comm_ram,shell=True)
+    comm_cores = "openstack flavor show "+flavor+" -f shell | grep \"vcpus\" | cut -d \"=\" -f2"
+    cores = subprocess.check_output(comm_cores, shell=True)
+    d['ram']=int(ram.replace("\n","").replace("\"",""))
+    d['cores']=int(cores.replace("\n","").replace("\"",""))
+    return d
 
-def quota_validate(slice_num):
+def quota_validate(slice_num,flavor,slice):
+    #env = "/opt/ops-workload-framework/heat_workload/envirnoment/" + envt + ".yaml"
+    #env_path = os.path.abspath(env)
     curr_instances = get_count("server")
     #  print(curr_instances)
+    flavor=getInfo(flavor)
     curr_ports = get_count("port")
-    curr_ram = 2048 * curr_instances
-    curr_cores = 2 * curr_instances
-    curr_volumes = 1 * curr_instances
+    curr_ram = flavor['ram'] * curr_instances
+    curr_cores = flavor['cores'] * curr_instances
+    #curr_volumes = 1 * curr_instances
     d = quota_parse()
     #  print int(slice_num)
-    pred_instances = curr_instances + int(slice_num * 3)
+    slice_count = getCount(slice)
+    pred_instances = curr_instances + int(slice_num * slice_count)
     #  print pred_instances
-    pred_ram = curr_ram + int(slice_num * 3 * 2048)
-    pred_cores = curr_cores + int(slice_num * 3 * 2)
-    pred_volumes = curr_volumes + int(slice_num * 3 * 1)
+    pred_ram = curr_ram + int(slice_num * slice_count * flavor['ram'])
+    pred_cores = curr_cores + int(slice_num * slice_count * flavor['cores'])
+    #pred_volumes = curr_volumes + int(slice_num * 3 * 1)
     #   print pred_ram
     #  print pred_cores
     #  print pred_volumes
     #  print d
 
     if (os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED']!=1):
-        if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores and d[
-        'volumes'] >= pred_volumes)):
+        if ((d['instances'] >= pred_instances and d['ram'] >= pred_ram and d['cores'] >= pred_cores)):
             return 1
         else:
             if (d['instances'] < pred_instances):
@@ -560,8 +648,6 @@ def quota_validate(slice_num):
                 print "Ram Quota will exceed: Predicted Usage: " + str(pred_ram) + "/" + str(d['ram'])
             if (d['cores'] < pred_cores):
                 print "Cpu Quota will exceed: Predicted Usage: " + str(pred_cores) + "/" + str(d['cores'])
-            if (d['volumes'] < pred_volumes):
-                print "Volume Quota will exceed: Predicted Usage: " + str(pred_volumes) + "/" + str(d['volumes'])
             return 0
     else:
         return 1

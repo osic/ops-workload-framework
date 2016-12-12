@@ -1,0 +1,9 @@
+nova.create_and_delete:
+  image: "ubuntu.medium"
+  network: "net1.medium"
+  flavor: "custom.workload.medium"
+nova.create_and_delete_volume:
+  image: "ubuntu.medium"
+  network: "net1.medium"
+  flavor: "custom.workload.medium"
+  size: 1
