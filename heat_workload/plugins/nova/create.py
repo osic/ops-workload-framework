@@ -10,11 +10,7 @@ class nova_create():
        self.image=image
        self.flavor=flavor
        self.network=network
-    def delete_server(self,name):
-       comm = "openstack server delete "+name
-       os.system(comm)
-       print "Deleted Server... "+name
-    def create_server(self):
+    def run(self):
        random=getrandom(5)
        self.name="server-"+random.getSuffix()
        comm = "openstack server create "+self.name+" --image "+self.image+" --flavor "+self.flavor+" --nic net-id="+self.network

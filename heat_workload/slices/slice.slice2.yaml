@@ -37,12 +37,39 @@ parameters:
     type: string
     description: Ip address of the database of monitoring stack
 resources:
-  cpu-GT4AG: 
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml 
+  network-1XEZ4: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/network.yaml 
     properties: 
+      network: { get_param: network }
       availability_zone: { get_param: availability_zone }
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
+      influx_ip: { get_param: influx_ip }
+  ram-12FIX: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml 
+    properties: 
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
       network: { get_param: network }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      influx_ip: { get_param: influx_ip }
+  disk-32E7G: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml 
+    properties: 
+      availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key_name }
+      network: { get_param: network }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      influx_ip: { get_param: influx_ip }
+  network-7TPH6: 
+    type: /opt/ops-workload-framework/heat_workload/resource_definition/network.yaml 
+    properties: 
+      network: { get_param: network }
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
       influx_ip: { get_param: influx_ip }

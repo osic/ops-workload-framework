@@ -67,15 +67,6 @@ resources:
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       network: { get_param: network }
-  cpu-NQDYM: 
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml 
-    properties: 
-      availability_zone: { get_param: availability_zone }
-      image: { get_param: image }
-      flavor: { get_param: flavor }
-      key_name: { get_param: key_name }
-      network: { get_param: network }
-  ram-U4I5H: 
     type: /opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml 
     properties: 
       availability_zone: { get_param: availability_zone }

@@ -34,7 +34,7 @@ parameters:
     description: Size of the volume to be created.
     type: number
 resources:
-  cpu-FG49T:
+  cpu-HHKWP:
     properties:
       availability_zone:
         get_param: availability_zone
@@ -49,37 +49,7 @@ resources:
       network:
         get_param: network
     type: /opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml
-  disk-JP255:
-    properties:
-      availability_zone:
-        get_param: availability_zone
-      flavor:
-        get_param: flavor
-      image:
-        get_param: image
-      influx_ip:
-        get_param: influx_ip
-      key_name:
-        get_param: key_name
-      network:
-        get_param: network
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml
-  disk-MONV9:
-    properties:
-      availability_zone:
-        get_param: availability_zone
-      flavor:
-        get_param: flavor
-      image:
-        get_param: image
-      influx_ip:
-        get_param: influx_ip
-      key_name:
-        get_param: key_name
-      network:
-        get_param: network
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml
-  network-12ADK:
+  network-QD8LF:
     properties:
       availability_zone:
         get_param: availability_zone
@@ -94,22 +64,7 @@ resources:
       network:
         get_param: network
     type: /opt/ops-workload-framework/heat_workload/resource_definition/network.yaml
-  ram-M61Q4:
-    properties:
-      availability_zone:
-        get_param: availability_zone
-      flavor:
-        get_param: flavor
-      image:
-        get_param: image
-      influx_ip:
-        get_param: influx_ip
-      key_name:
-        get_param: key_name
-      network:
-        get_param: network
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml
-  ram-OB7AB:
+  ram-R2AZ2:
     properties:
       availability_zone:
         get_param: availability_zone

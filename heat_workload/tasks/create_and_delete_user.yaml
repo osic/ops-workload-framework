@@ -1,0 +1,3 @@
+keystone.create_and_delete_user:
+   domain: "Default"
+   project: "admin"

@@ -48,7 +48,7 @@ resources:
           - protocol: tcp
             port_range_min: 22
             port_range_max: 22
-  port_client:
+  port_server:
     type: OS::Neutron::Port
     properties:
       network: { get_param: network }
@@ -59,12 +59,12 @@ resources:
     properties:
             length: 7
             sequence: lowercase
-  nova_client:
+  nova_server:
     type: OS::Nova::Server
     properties:
       name:
         str_replace:
-          template: network-client-$NONCE
+          template: network-server-$NONCE
           params:
             $NONCE: { get_resource: name_nonce}
       availability_zone: { get_param: availability_zone }
@@ -72,7 +72,7 @@ resources:
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       networks: 
-        - port: { get_resource: port_client }
+        - port: { get_resource: port_server }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -90,24 +90,21 @@ resources:
             sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
             sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
             service telegraf restart
-            while [1]; do
-               echo "Stressing script started..."
-               sudo nc -l -p 1234 > /root/out_small.file
-               sudo nc -l -p 1235 > /root/out_large.file
-               sudo rm /root/out.file /root/out_large.file
-            done
-  port_server:
+            sudo dd if=/dev/urandom of=random_small.img count=10 bs=10M
+            sudo dd if=/dev/urandom of=random_large.img count=100 bs=10M
+            python -m SimpleHTTPServer 1234
+  port_client:
     type: OS::Neutron::Port
     properties:
       network: { get_param: network }
       security_groups:
         - { get_resource: security_group }
-  nova_server:
+  nova_client:
     type: OS::Nova::Server
     properties:
       name:
         str_replace:
-          template: network-server-$NONCE
+          template: network-client-$NONCE
           params:
             $NONCE: { get_resource: name_nonce}
       availability_zone: { get_param: availability_zone }
@@ -115,13 +112,13 @@ resources:
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       networks: 
-        - port: { get_resource: port_server }
+        - port: { get_resource: port_client }
       user_data_format: RAW
       user_data: 
         str_replace:
           params:
             __influx_ip__: { get_param: influx_ip }
-            __client_ip__: { get_attr: [nova_client,first_address]  }
+            __server_ip__: { get_attr: [nova_server,first_address]  }
           template: |
             #!/bin/sh
             sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
@@ -134,10 +131,12 @@ resources:
             sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
             sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
             service telegraf restart
-            echo '__client_ip__' > /root/ip
-            dd if=/dev/urandom of=random_small.img count=10 bs=10M
-            dd if=/dev/urandom of=random_large.img count=100 bs=10M
-            while [1]; do
-                nc -w 10 '__client_ip__' 1234 < random_small.img
-                nc -w 10 '__client_ip__' 1235 < random_large.img
+            echo '__server_ip__' > /root/ip
+            while true; do
+                echo "Script started"
+                sudo wget '__server_ip__':1234/random_small.img -o /root/random_small.img
+                sudo wget '__server_ip__':1234/random_large.img -o /root/random_large.img
+                sudo rm /root/random_small.img
+                sudo rm /root/random_large.img
             done
+         

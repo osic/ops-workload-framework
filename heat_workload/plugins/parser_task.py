@@ -11,7 +11,7 @@ class parser_task():
               plugin_name=key.split('.')[0]
               pkg=sys.path.append("/opt/ops-workload-framework/heat_workload/plugins/"+plugin_name)
               class_name=key.split('.')[1]
-              print "Task: "+class_name+" started..."
+              print plugin_name+" - Task: "+class_name+" started..."
               new_module = importlib.import_module(class_name,pkg)
               mod=getattr(new_module,class_name)
               obj=mod(**value)

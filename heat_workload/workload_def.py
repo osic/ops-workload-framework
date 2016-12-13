@@ -271,22 +271,31 @@ def slice_destroy(name):
 @click.option('--name', required=True,help="Name of workload to delete")
 def slice_remove(slice,name):
     slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
-    f = fileinput.input(slice, inplace=True)
-    pattern = "  "+name+":"
-    i = 0
-    flag=0
-    for line in f:
-        if pattern in line:
-            flag=1
-            i = i + 1
-        if i == 10:
-            i = 0
-        if i > 0:
-            if i <= 10:
-                i = i + 1
-            continue
-        print(line),
+    f=open(slice)
+    stream = yaml.load(f)
+    if name in stream['resources']:
+        flag=1
+        del stream['resources'][name]
+    else: flag=0
+    #f = fileinput.input(slice, inplace=True)
+    #pattern = "  "+name+":"
+    #i = 0
+    #flag=0
+    #for line in f:
+        #if pattern in line:
+            #flag=1
+            #i = i + 1
+        #if i == 10:
+            #i = 0
+        #if i > 0:
+            #if i <= 10:
+                #i = i + 1
+            #continue
+        #print(line),
+    with open(slice, 'w') as f1:
+        yaml.dump(stream, f1, default_flow_style=False)
     f.close()
+    f1.close
     if flag == 0: print "Workload: "+name+" not found in slice: "+slice
     else: print "Workload: "+name+" removed from slice: "+slice
 
@@ -302,11 +311,20 @@ def slice_show(slice):
     for line in lines:
         i = i + 1
         count = len(line) - len(line.lstrip())
-        if i >= 39 and count == 2:
+        if i >= getParam(slice) and count == 2:
             count=count+1
             print line.replace(":", "").strip()
     f.close()
 
+def getParam(slice):
+   count = 0
+   with open(slice) as f:
+       lines = f.readlines()
+   for line in lines:
+       if "resources:" not in line:
+             count=count+1
+       else: break
+   return count
 
 def getCount(slice):
     slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
@@ -319,8 +337,8 @@ def getCount(slice):
     for line in lines:
         i = i + 1
         count = len(line) - len(line.lstrip())
-        if i >= 39 and count == 2:
-            vm = vm + 1
+        if i >= getParam(slice) and count == 2:
+            vm = vm +1
     f.close()
     return vm
 

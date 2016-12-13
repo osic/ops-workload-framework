@@ -6,7 +6,7 @@ import subprocess
 class create_volume():
     def __init__(self,size):
        self.size=size
-    def create(self):
+    def run(self):
        random=getrandom(5)
        self.name = "volume-"+random.getSuffix()
        comm = "openstack volume create "+self.name+" --size "+str(self.size)

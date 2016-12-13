@@ -10,9 +10,9 @@ class create_and_delete():
          self.network=network
       def run(self):
          created = nova_create(self.image,self.flavor,self.network)
-         server_name=created.create_server()
+         server_name=created.run()
          time.sleep(30)
          deleted = nova_delete(server_name)
-         deleted.delete_server()
+         deleted.run()
 #obj=create_and_delete("ubuntu.medium","custom.workload.medium","net1.large")
 #obj.run()
