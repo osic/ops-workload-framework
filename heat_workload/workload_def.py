@@ -312,6 +312,7 @@ def getCount(slice):
     slice = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/" + "slice." + slice + ".yaml")
     i = 0
     count = 0
+    vm = 0
     with open(slice) as f:
         lines = f.readlines()
     print("Workloads: ")
@@ -319,9 +320,9 @@ def getCount(slice):
         i = i + 1
         count = len(line) - len(line.lstrip())
         if i >= 39 and count == 2:
-            count=count+1
+            vm = vm + 1
     f.close()
-    return count
+    return vm
 
 def getConfig():
     config = open("/opt/ops-workload-framework/heat_workload/config.yaml")
