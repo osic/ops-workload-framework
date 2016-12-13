@@ -332,15 +332,15 @@ def setConfig():
     config_data = getConfig()
     cpu = "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
     pattern = "            sudo stress-ng --cpu"
-    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all"
+    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all -t 2147483647"
     replace(newline,pattern,cpu)
     ram = "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
-    pattern = "        sudo stress-ng -m "
-    newline = "        sudo stress-ng -m " + str(config_data['ram_workers']) + " --vm-bytes " + str(config_data['ram_bytes'])
+    pattern = "            sudo stress-ng -m "
+    newline = "            sudo stress-ng -m " + str(config_data['ram_workers']) + " --vm-bytes " + str(config_data['ram_bytes']) + " -t 2147483647"
     replace(newline,pattern,ram)
     disk = "/opt/ops-workload-framework/heat_workload/resource_definition/disk.yaml"
-    pattern = "        sudo stress-ng --hdd "
-    newline = "        sudo stress-ng --hdd " + str(config_data['disk_workers']) + " --hdd-bytes " + str(config_data['disk_bytes'])
+    pattern = "            sudo stress-ng --hdd "
+    newline = "            sudo stress-ng --hdd " + str(config_data['disk_workers']) + " --hdd-bytes " + str(config_data['disk_bytes'])+" -t 2147483647"
     replace(newline, pattern,disk)
 
 

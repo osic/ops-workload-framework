@@ -68,6 +68,7 @@ resources:
             sudo apt-get install -f
             telegraf config > /etc/telegraf/telegraf.conf
             sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
             service telegraf restart
             sudo apt-get install stress-ng -y
-            sudo stress-ng --hdd 60 --hdd-bytes 1g --metrics-brief
+            sudo stress-ng --hdd 65 --hdd-bytes 1g -t 2147483647

@@ -30,6 +30,9 @@ parameters:
     default: 1
     constraints:
       - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
 resources:
   security_group:
       type: OS::Neutron::SecurityGroup
@@ -71,16 +74,28 @@ resources:
       networks: 
         - port: { get_resource: port_client }
       user_data_format: RAW
-      user_data: |
-        #!/bin/sh
-        sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
-        sudo apt-get update
-        while [1]; do
-           echo "Stressing script started..."
-           sudo nc -l -p 1234 > /root/out_small.file
-           sudo nc -l -p 1235 > /root/out_large.file
-           sudo rm /root/out.file /root/out_large.file
-        done
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+          template: |
+            #!/bin/sh
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            while [1]; do
+               echo "Stressing script started..."
+               sudo nc -l -p 1234 > /root/out_small.file
+               sudo nc -l -p 1235 > /root/out_large.file
+               sudo rm /root/out.file /root/out_large.file
+            done
   port_server:
     type: OS::Neutron::Port
     properties:
@@ -105,11 +120,20 @@ resources:
       user_data: 
         str_replace:
           params:
+            __influx_ip__: { get_param: influx_ip }
             __client_ip__: { get_attr: [nova_client,first_address]  }
           template: |
-            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
-            sudo apt-get update
             #!/bin/sh
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
             echo '__client_ip__' > /root/ip
             dd if=/dev/urandom of=random_small.img count=10 bs=10M
             dd if=/dev/urandom of=random_large.img count=100 bs=10M
