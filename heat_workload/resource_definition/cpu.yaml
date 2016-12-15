@@ -69,7 +69,7 @@ resources:
             sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
             service telegraf restart
             sudo apt-get install stress-ng -y
-            sudo stress-ng --cpu 2 --cpu-load 100 --cpu-method all -t 2147483647
+            sudo stress-ng --cpu 2 --cpu-load 80 --cpu-method all -t 2147483647
 outputs: 
   host: 
     description: The host this server lives on. 

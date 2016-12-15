@@ -361,6 +361,10 @@ def setConfig():
     pattern = "            sudo stress-ng --hdd "
     newline = "            sudo stress-ng --hdd " + str(config_data['disk_workers']) + " --hdd-bytes " + str(config_data['disk_bytes'])+" -t 2147483647"
     replace(newline, pattern,disk)
+    slice = "/opt/ops-workload-framework/heat_workload/resource_definition/slice.yaml"
+    pattern = "            sudo stress-ng --cpu "
+    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all -m "+ str(config_data['ram_workers']) +" --vm-bytes "+ str(config_data['ram_bytes']) +" --hdd "+ str(config_data['disk_workers']) +" --hdd-bytes "+ str(config_data['disk_bytes']) +" -t 2147483647"
+    replace(newline, pattern, slice)
 
 
 @workload_def.command('workload-list', help = "List all workloads present in resource_definition")
@@ -491,14 +495,15 @@ def create_key(env_path):
 
 
 def create_flavor(env_path,type):
+    flavor = getConfig()
     if type == "small":
-        params = {'name': "custom.workload.small",'ram': 1024,'disk': 2,'vcpu': 1}
+        params = {'name': "custom.workload.small",'ram': flavor['small']['ram'],'disk': flavor['small']['disk'],'vcpu': flavor['small']['vcpu']}
     elif type == "medium":
-        params = {'name': "custom.workload.medium", 'ram': 2048, 'disk': 4, 'vcpu': 4}
+        params = {'name': "custom.workload.medium", 'ram': flavor['medium']['ram'], 'disk': flavor['medium']['disk'], 'vcpu': flavor['medium']['vcpu']}
     elif type == "large":
-        params = {'name': "custom.workload.large", 'ram': 4096, 'disk': 6, 'vcpu': 6}
+        params = {'name': "custom.workload.large", 'ram': flavor['large']['ram'], 'disk': flavor['large']['disk'], 'vcpu': flavor['large']['vcpu']}
     else:
-        params = {'name': "custom.workload.slice", 'ram': 8192, 'disk': 8, 'vcpu': 8}
+        params = {'name': "custom.workload.slice", 'ram': flavor['slice']['ram'], 'disk': flavor['slice']['disk'], 'vcpu': flavor['slice']['vcpu']}
     comm = "openstack flavor create " + str(params['name']) + " --ram " + str(params['ram']) + " --disk " + str(params['disk']) + " --vcpu " + str(params['vcpu']) + " --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     # os.system("openstack flavor create m1.small_1 --ram 2048 --disk 10 --vcpu 1 --public")
     comm_check = "openstack flavor show " + params['name']
@@ -571,16 +576,17 @@ def create_network(env_path,type,ext):
 
 
 def create_image(env_path, type):
+    image = getConfig()
     if type == "small":
-        params = {'name':'ubuntu.small','url':'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+        params = {'name':'image.small','url': image['image_small']}
     elif type == "medium":
-        params = {'name':'ubuntu.medium','url':'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+        params = {'name':'image.medium','url': image['image_medium']}
     elif type == "large":
-        params = {'name': 'ubuntu.large',
-                  'url': 'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+        params = {'name': 'image.large',
+                  'url': image['image_large']}
     else:
         params = {'name': 'ubuntu.slice',
-                  'url': 'http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img'}
+                  'url': image['image_slice']}
     comm = "openstack --os-image-api-version 1 image create " + params['name'] + " --location \"" + params['url'] + "\" --disk-format qcow2 --container-format bare --public | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
     comm_check = "openstack image show " + params['name']
     try:

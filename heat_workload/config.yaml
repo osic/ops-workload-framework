@@ -1,5 +1,25 @@
-cpu_load: 100
-ram_workers: 55
-ram_bytes: "500m"
-disk_workers: 65
-disk_bytes: "1g"
+cpu_load: 80
+ram_workers: 50
+ram_bytes: "250m"
+disk_workers: 60
+disk_bytes: "2g"
+large:
+  ram: 4096
+  disk: 6
+  vcpu: 6
+small:
+  ram: 1024
+  disk: 2
+  vcpu: 1
+medium:
+  ram: 2048
+  disk: 4
+  vcpu: 4
+slice: 
+  ram: 8192
+  disk: 8
+  vcpu: 8
+image_small: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+image_medium: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+image_large: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+image_slice: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img" 

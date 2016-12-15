@@ -1,0 +1,79 @@
+heat_template_version: 2015-04-30
+description: Autoscaling group for slice.
+
+parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
+  size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+  image:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+  flavor:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+  num_of_slices:
+    type: number
+    label: Number of Slices
+    description: Number of Slices to be deployed
+    constraints:
+      - range: {min: 1}
+  scaling_size:
+    type: number
+    label: Scaling factor
+    description: Maximum value of scaling factor
+    constraints:
+      - range: {min: 1}
+  network:
+    type: string
+    label: Network ID or name
+  size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
+resources:
+  group-slice:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      cooldown: 
+      desired_capacity: { get_param: num_of_slices }
+      max_size: 99
+      min_size: 1
+      resource:
+        type: /opt/ops-workload-framework/heat_workload/slices/slice.sample.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          network: { get_param: network }
+          availability_zone: { get_param: availability_zone }
+          size: { get_param: size }
+          key_name: { get_param: key_name }
+          influx_ip: {get_param: influx_ip }
+  scaleup_policy_slice:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: group-slice }
+      #cooldown: 10
+      scaling_adjustment: { get_param: scaling_size }
+
+outputs:
+  scale_up_url_slice:
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+    value: {get_attr: [scaleup_policy_slice, alarm_url]}

@@ -92,7 +92,7 @@ resources:
             service telegraf restart
             sudo dd if=/dev/urandom of=random_small.img count=10 bs=10M
             sudo dd if=/dev/urandom of=random_large.img count=100 bs=10M
-            python -m SimpleHTTPServer 1234
+            sudo python -m SimpleHTTPServer 1234
   port_client:
     type: OS::Neutron::Port
     properties:

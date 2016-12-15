@@ -71,4 +71,4 @@ resources:
             sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
             service telegraf restart
             sudo apt-get install stress-ng -y
-            sudo stress-ng --hdd 65 --hdd-bytes 1g -t 2147483647
+            sudo stress-ng --hdd 60 --hdd-bytes 2g -t 2147483647
