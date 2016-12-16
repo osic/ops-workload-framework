@@ -34,36 +34,6 @@ parameters:
     description: Size of the volume to be created.
     type: number
 resources:
-  cpu-HHKWP:
-    properties:
-      availability_zone:
-        get_param: availability_zone
-      flavor:
-        get_param: flavor
-      image:
-        get_param: image
-      influx_ip:
-        get_param: influx_ip
-      key_name:
-        get_param: key_name
-      network:
-        get_param: network
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml
-  network-QD8LF:
-    properties:
-      availability_zone:
-        get_param: availability_zone
-      flavor:
-        get_param: flavor
-      image:
-        get_param: image
-      influx_ip:
-        get_param: influx_ip
-      key_name:
-        get_param: key_name
-      network:
-        get_param: network
-    type: /opt/ops-workload-framework/heat_workload/resource_definition/network.yaml
   ram-R2AZ2:
     properties:
       availability_zone:

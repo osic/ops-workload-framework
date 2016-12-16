@@ -1,9 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": f26bd8f1-afe5-4fed-93d5-8f5a68b4b827
-  "image": e219afc5-240c-4eac-b983-3db868cdb68d
-  "availability_zone": nova:compute-1.openstack.local
+  "flavor": 0827524b-9165-4a63-bb4c-a7025c7a5bf2
+  "image": b70fd709-dd3e-43e6-b03e-be32c8167e60
+  "availability_zone": nova
   "size": 1
-  "network": 9ad80b8c-9ffa-4503-aebd-7702054fe090
+  "network": bcc6e7ea-57a7-45ab-9eae-72b5aa46616c
   "scaling_size": 1
   "key_name": wload_key
+  "influx_ip": 172.99.106.164

@@ -333,7 +333,6 @@ def getCount(slice):
     vm = 0
     with open(slice) as f:
         lines = f.readlines()
-    print("Workloads: ")
     for line in lines:
         i = i + 1
         count = len(line) - len(line.lstrip())
@@ -451,11 +450,12 @@ def create_context(ext):
 
 @workload_def.command('check-quota', help="Check quotas before creating workloads ")
 def quota_check():
+    curr = getCurrentUsage()
     curr_instances = 0 if get_count("server") < 0 else get_count("server")
     curr_ports = 0 if get_count("port") < 0 else get_count("port")
-    curr_ram = 2048 * curr_instances
-    curr_cores = 2 * curr_instances
-    curr_volumes = 1 * curr_instances
+    curr_ram = curr['ram']
+    curr_cores = curr['cores']
+    curr_volumes = curr['volumes']
     curr_networks = 0 if get_count("network") < 0 else get_count("network")
     d = quota_parse()
     print("Instances: \n" + "Current Usage: " + str(curr_instances) + "\n" + "Total Usage: " + str(d['instances']) + "\n")
@@ -464,6 +464,20 @@ def quota_check():
     print("Cores: \n" + "Current Usage: " + str(curr_cores) + "\n" + "Total Usage: " + str(d['cores']) + "\n")
     print("Volumes: \n" + "Current Usage: " + str(curr_volumes) + "\n" + "Total Usage: " + str(d['volumes']) + "\n")
     print("Networks: \n" + "Current Usage: " + str(curr_networks) + "\n" + "Total Usage: " + str(d['networks']) + "\n")
+
+
+def getCurrentUsage():
+    d = {}
+    comm_cores = "nova absolute-limits | grep Cores | awk 'BEGIN{ FS=\"Cores  \"}{print $2}' | cut -d \"|\" -f 2"
+    comm_ram = "nova absolute-limits | grep RAM | awk 'BEGIN{ FS=\"RAM  \"}{print $2}' | cut -d \"|\" -f 2"
+    comm_volume = "cinder quota-usage admin| grep -i volumes | awk 'BEGIN{ FS=\"volumes  \"}{print $2}' | cut -d \"|\" -f 2"
+    cores = subprocess.check_output(comm_cores,shell=True)
+    d['cores'] = 0 if '-' in cores else int(cores.strip())
+    ram = subprocess.check_output(comm_ram,shell=True)
+    d['ram'] = 0 if '-' in ram else int(ram.strip())
+    volumes = subprocess.check_output(comm_volume,shell=True)
+    d['volumes'] = 0 if '-' in volumes else int(volumes.strip())
+    return d
 
 def create_key(env_path):
     comm = "openstack keypair create wload_key > /root/wload_key.pem"
@@ -646,9 +660,11 @@ def quota_validate(slice_num,flavor,slice):
     curr_instances = get_count("server")
     #  print(curr_instances)
     flavor=getInfo(flavor)
+    curr = getCurrentUsage()
     curr_ports = get_count("port")
-    curr_ram = flavor['ram'] * curr_instances
-    curr_cores = flavor['cores'] * curr_instances
+    curr_ram = curr['ram']
+    curr_cores = curr['cores']
+    curr_volumes = curr['volumes']
     #curr_volumes = 1 * curr_instances
     d = quota_parse()
     #  print int(slice_num)
@@ -657,7 +673,7 @@ def quota_validate(slice_num,flavor,slice):
     #  print pred_instances
     pred_ram = curr_ram + int(slice_num * slice_count * flavor['ram'])
     pred_cores = curr_cores + int(slice_num * slice_count * flavor['cores'])
-    #pred_volumes = curr_volumes + int(slice_num * 3 * 1)
+    pred_volumes = curr_volumes + int(slice_num * slice_count * 0)
     #   print pred_ram
     #  print pred_cores
     #  print pred_volumes
