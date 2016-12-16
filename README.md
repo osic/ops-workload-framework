@@ -194,7 +194,7 @@ workload_def check-quota
 workload_def workload-list
 
 #Create Workload 
-workload_def create --name <name-of-stack> -n <num-of-slices> --host <compute-hostname>/--group <ansible-group-name>/<none> --type <type(small/medium/large/slice)> --envt <name-of-environment> 
+workload_def create --name <name-of-stack> -n <num-of-slices> --host <compute-hostname>/--group <ansible-group-name>/<none> --slice <name-of-slice> --envt <name-of-environment> 
 
 #Check status of workload creation:
 workload_def check-status --name <name-of-workload>
