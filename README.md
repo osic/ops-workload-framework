@@ -9,8 +9,12 @@ Contents
 + [Overview](https://github.com/osic/ops-workload-framework/blob/master/README.md#overview)
 + [Proposed Workloads](https://github.com/osic/ops-workload-framework/blob/master/README.md#proposed-workloads)
 + [Prerequisites](https://github.com/osic/ops-workload-framework/blob/master/README.md#prerequisites)
-+ [Workload Definition](https://github.com/osic/ops-workload-framework/blob/master/README.md#workload-definition)
++ [Creating Workload Definition](https://github.com/osic/ops-workload-framework/blob/master/README.md#workload-definition)
 + [Autoscaling group](https://github.com/osic/ops-workload-framework/blob/master/README.md#autoscaling-group)
++ [Workload slice] (https://github.com/osic/ops-workload-framework/blob/master/README.md#workload-slice)
++ [Run control plane plugins](https://github.com/osic/ops-workload-framework/blob/master/README.md#control-plane-plugins)
++ [Centralized configuration of workloads and flavors](https://github.com/osic/ops-workload-framework/blob/master/README.md#centralized-configuration)
++ [Using multiple target hosts](https://github.com/osic/ops-workload-framework/blob/master/README.md#multiple-target-hosts)
 + [Quota Checks](https://github.com/osic/ops-workload-framework/blob/master/README.md#quota-checks)
 + [Environment Variables](https://github.com/osic/ops-workload-framework/blob/master/README.md#environment-variables)
 + [Installation](https://github.com/osic/ops-workload-framework/blob/master/README.md#installation)
@@ -65,6 +69,62 @@ The autoscaling groups are defined inside the "main.yaml" file.
 ```shell
 # POST reques webhook URL to trigger scaling
 curl -XPOST -i "<URL>"
+```
+
+Workload slice
+--------------
+A workload slice consists of multiple workloads along with their properties and parameters. Workload generator allows creation/delete/modification of slices and considers only those workloads that are in `resource_definition` directory. __For deploying a workload, it must be added to an existing slice.__  
+
+Workload generator slice commands are as follows:
+
+1. Create an empty slice and autoscaling group for slice. A slice will be created in 'slices' directory and an autoscaling group file will be created by name "main-slice.<name-of-slice>.yaml"
+```shell
+workload_def slice-define --name <name-of-slice>
+```
+
+2. Destroy slice:
+```shell
+workload_def slice-destroy --name <name-of-slice>
+```
+
+3. View workloads in slice:
+```shell
+workload_def slice-show --slice <name-of-slice>
+```
+
+4. List slices:
+```shell
+workload_def slice-list
+```
+
+5. Remove specific workloads from slice:
+```shell
+workload_def slice-remove --slice <name-of-slice> --name <name-of-workload>
+```
+
+6. Add workloads in an existing slice:
+```shell
+workload_def slice-add --name <name-of-slice> --add <name-of-workload>
+
+
+Control Plane plugins
+---------------------
+The workload generator also provides control plane plugins to test API of core services. They are located under `plugins` directory and a YAML task can be created to invoke those plugins. 
+Running a sample task:
+```shell
+workload_def task-start <name-of-task-file> -n <number-of-iterations(-1: infinite)>
+```
+
+Centralized configuration
+-------------------------
+The workload generator reads and applies values from the `config.yaml` file located in main directory before deploying any slice workloads. This configuration allows user to control cpu,ram,disk workloads as well as flavors that will be created during context creation.
+
+Multiple target hosts
+---------------------
+It is possible to group multiple compute hosts using ansible host group. The workload generator then gives the option to either target a single compute host or an ansible group. The `host` file lists the different ansible host groups. The user can create their own ansible group or can use the `[all]` group which will deploy workloads on all compute hosts.
+The following command can create an `[all]` group with all compute hosts inside host file:
+```shell
+workload_def gen-host
 ```
 
 Quota Checks
@@ -124,19 +184,22 @@ The wrapper also validates quotas while creation and scaling and terminates oper
 The credentials required for connecting to exisitng Openstack deployment should be stored as environment variables.
 ```shell
 #Create Context (will create Ubuntu 14.04 image, network, flavor and keypair)
-workload_def context-create
+workload_def create-context --ext <name-of-external-network>
 
 #Check quotas before creating workloads (Recommended) 
-workload_def quota-check
+workload_def check-quota
+
+#List workload
+workload_def workload-list
 
 #Create Workload 
-workload_def workload-create --name <name_of_workload> -n <num_of_slices> --host <compute-hostname> --type <type(small/medium/large/slice)>
+workload_def create --name <name-of-stack> -n <num-of-slices> --host <compute-hostname>/--group <ansible-group-name>/<none> --type <type(small/medium/large/slice)> --envt <name-of-environment> 
 
 #Check status of workload creation:
-workload_def check-status --name <name_of_workload>
+workload_def check-status --name <name-of-workload>
 
 #Scale-up workload
-workload_def scale-up -sf <scaling-factor> --name <name_of_workload>
+workload_def scale -sf <scaling-factor> --name <name-of-workload>
 
 #Delete Workload and context environment
 workload_def workload-delete --name <name_of_workload>
@@ -145,5 +208,5 @@ workload_def workload-delete --name <name_of_workload>
 
 To Do Items
 -----------
-+ Some variable values in the environment file (Image, Instance Type) are not being reflected in the individual resource definition. Debugging the cause for the same. -- done
-+ Adding feature for  deleting workload, view status of workload, and having the scale-up perform scaling up by just specifying the workload name. --done
++ Creating control plane plugins for all core services.
++ Creating API monitoring module
