@@ -105,6 +105,7 @@ workload_def slice-remove --slice <name-of-slice> --name <name-of-workload>
 6. Add workloads in an existing slice:
 ```shell
 workload_def slice-add --name <name-of-slice> --add <name-of-workload>
+```
 
 
 Control Plane plugins
