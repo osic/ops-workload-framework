@@ -5,4 +5,4 @@ class delete_volume():
     def run(self):
        comm="openstack volume delete "+self.name
        os.system(comm)
-       print "Volume: "+volume_name+" deleted"
+       print "Volume: "+self.name+" deleted"

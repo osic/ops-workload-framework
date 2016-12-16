@@ -1,0 +1,13 @@
+glance.create_and_delete:
+  url: "http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+  disk: qcow2
+  container: bare
+nova.create_and_delete:
+  image: "image.medium"
+  network: "net1.medium"
+  flavor: "custom.workload.medium"
+nova.create_and_delete_volume:
+  image: "image.medium"
+  network: "net1.medium"
+  flavor: "custom.workload.medium"
+  size: 1

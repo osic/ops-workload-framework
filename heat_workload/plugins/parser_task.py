@@ -14,5 +14,5 @@ class parser_task():
               print plugin_name+" - Task: "+class_name+" started..."
               new_module = importlib.import_module(class_name,pkg)
               mod=getattr(new_module,class_name)
-              obj=mod(**value)
+              obj=mod() if value is None else mod(**value) 
               obj.run()

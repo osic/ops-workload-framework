@@ -1,4 +1,4 @@
 glance.create_and_delete:
-     url: "http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
-     disk: "qcow2"
-     container: "bare"
+   url: "http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+   disk: "qcow2"
+   container: "bare"

@@ -17,10 +17,10 @@ class create_and_delete_volume():
     def run(self):
        created=nova_create(self.image,self.flavor,self.network)
        server_name=created.run()
-       time.sleep(35)
+       time.sleep(10)
        volume=create_volume(self.size)
        volume_name=volume.run()
-       time.sleep(20)
+       time.sleep(10)
        comm = "openstack server add volume "+server_name+" "+volume_name
        os.system(comm)
        time.sleep(10)
