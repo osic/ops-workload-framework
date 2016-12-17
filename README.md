@@ -77,32 +77,32 @@ A workload slice consists of multiple workloads along with their properties and 
 
 Workload generator slice commands are as follows:
 
-1. Create an empty slice and autoscaling group for slice. A slice will be created in 'slices' directory and an autoscaling group file will be created by name "main-slice.<name-of-slice>.yaml"
+__Create an empty slice and autoscaling group for slice. A slice will be created in 'slices' directory and an autoscaling group file will be created by name__ `main-slice.<name-of-slice>.yaml`
 ```shell
 workload_def slice-define --name <name-of-slice>
 ```
 
-2. Destroy slice:
+__Destroy slice__
 ```shell
 workload_def slice-destroy --name <name-of-slice>
 ```
 
-3. View workloads in slice:
+__View workloads in slice__
 ```shell
 workload_def slice-show --slice <name-of-slice>
 ```
 
-4. List slices:
+__List slices__
 ```shell
 workload_def slice-list
 ```
 
-5. Remove specific workloads from slice:
+__Remove specific workloads from slice__
 ```shell
 workload_def slice-remove --slice <name-of-slice> --name <name-of-workload>
 ```
 
-6. Add workloads in an existing slice:
+__Add workloads in an existing slice__
 ```shell
 workload_def slice-add --name <name-of-slice> --add <name-of-workload>
 ```
