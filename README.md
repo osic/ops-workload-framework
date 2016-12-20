@@ -154,6 +154,7 @@ The parameters section should define the attributes along with their values that
   + volume_size: The size of cinder volumes to be attached to each resource.
   + network_id: The ID or name of network whose subnets will be used for booting the instance.
   + key: The keypair name used to ssh into the vms.
+  + influx_ip: The IP address of the influx db server.
 
 2. The "resource_registry" maps one resource to another. The resource_registry section should specify the absolute path of the particular resource definition when mapping it to another resource.
   + "resource name to map to": "absolute path of resource which is to be mapped"
