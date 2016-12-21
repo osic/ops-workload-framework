@@ -1,0 +1,93 @@
+heat_template_version: 2015-04-30
+description: CPU intensive resource.
+
+parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+  image:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    constraints:
+      - custom_constraint: glance.image
+  flavor:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    constraints:
+      - custom_constraint: nova.flavor
+  network:
+    type: string
+    label: Network ID/Name
+    description: Network to be used for compute instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
+resources:
+  name_nonce:
+    type: OS::Heat::RandomString
+    properties:
+            length: 7
+            sequence: lowercase
+  nova_server:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: generic_disk-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks: 
+        - network: { get_param: network }
+      user_data_format: RAW
+      user_data: 
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+          template: |
+            #!/bin/sh
+            sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            sudo apt-get install stress-ng -y
+            ram_percentage=30
+            disk_percentage=70
+            cpu_percentage=30
+            sudo apt-get install python
+            python -c "print ($(cat /proc/meminfo | grep MemTotal | awk -F ' ' '{print $2}')/1000000)*$ram_percentage/100">>tmp1.txt
+            ram=`cat tmp1.txt`
+            rm -rf tmp1.txt
+            echo $value
+            sudo stress-ng -m $ram --vm-bytes 1g -t 2147483647 &
+            python -c "print  $(fdisk -l | grep Disk | grep bytes | awk -F ' ' '{print $(NF-1)}')*0.00000000001*$disk_percentage" >>tmp1.txt
+            disk=`cat tmp1.txt`
+            rm -rf tmp1.txt
+            echo $value
+            sudo stress-ng --hdd $disk --hdd-bytes 1g -t 2147483647 &
+            sudo stress-ng --cpu 1 --cpu-load $cpu_percentage --cpu-method all -t 2147483647 &
+            touch /root/out.txt
+            chmod 777 /root/out.txt
+            sudo nc -k -l 0.0.0.0 2392 > /root/out.txt
+outputs: 
+  host: 
+    description: The host this server lives on. 
+    value: {get_attr: [nova_server, show, 'OS-EXT-SRV-ATTR:host']} 
