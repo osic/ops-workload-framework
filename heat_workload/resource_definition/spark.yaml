@@ -1,0 +1,360 @@
+heat_template_version: 2015-04-30
+description: Network intensive resource.
+
+parameters:
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
+  image:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    constraints:
+      - custom_constraint: glance.image
+  flavor:
+    type: string
+    label: Instance Type
+    description: Type of instance (flavor) to be used
+    constraints:
+      - custom_constraint: nova.flavor
+  network:
+    type: string
+    label: Network ID/Name
+    description: Network to be used for compute instance.
+  size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1 }
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
+resources:
+  security_group:
+      type: OS::Neutron::SecurityGroup
+      properties:
+        name: web_server_security_group
+        rules:
+          - protocol: tcp
+            port_range_min: 1234
+            port_range_max: 1234
+          - protocol: tcp
+            port_range_min: 1235
+            port_range_max: 1235
+          - protocol: tcp
+            port_range_min: 2390
+            port_range_max: 2390
+          - protocol: tcp
+            port_range_min: 9999
+            port_range_max: 9999
+          - protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+
+  port_data_server:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups:
+        - { get_resource: security_group }
+        - default
+  data_server:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: spark-client-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port_data_server }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+          template: |
+            #!/bin/sh
+            sudo su -
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            wget http://norvig.com/big.txt
+            cp big.txt 1.txt
+            cp big.txt 2.txt
+            cp big.txt 3.txt
+            while : ; do while read line ; do echo $line ; sleep 0.001 ; done < 1.txt; done | nc -lk 6666 &
+            while : ; do while read line ; do echo $line ; sleep 0.001 ; done < 2.txt; done | nc -lk 7777 &
+            while : ; do while read line ; do echo $line ; sleep 0.001 ; done < 3.txt; done | nc -lk 8888 &
+
+  port_server:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups:
+        - { get_resource: security_group }
+        - default
+  name_nonce:
+    type: OS::Heat::RandomString
+    properties:
+            length: 7
+            sequence: lowercase
+  nova_server:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: spark-1-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks: 
+        - port: { get_resource: port_server }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+            __data_server_ip__: { get_attr: [data_server,first_address]  }
+          template: |
+            #!/bin/sh
+            sudo su -
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            # NOte: in all the cluster nodes
+            sudo apt-get install -y python-software-properties
+            sudo add-apt-repository -y ppa:webupd8team/java
+            sudo apt-get update -y
+            echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+            sudo apt-get install -y oracle-java7-installer
+
+            # NOte in all the cluster nodes
+            sudo apt-get -y install scala
+            sudo apt-get install -y openssh-server openssh-client
+
+            # generate key pair
+            rm -rf ~/.ssh/id_rsa
+            sudo ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+            cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+            #install spark
+            hostname=`hostname`
+            sudo sed -i "1s/^/127.0.0.1 $hostname \n /" /etc/hosts
+            cd /root/
+            wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz
+            tar xzvf spark-2.0.2-bin-hadoop2.7.tgz
+            cd spark-2.0.2-bin-hadoop2.7
+            export JAVA_HOME=JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_HOME=/root/spark-2.0.2-bin-hadoop2.7/
+            sudo echo "JAVA_HOME=/usr/lib/jvm/java-7-oracle" >> /etc/environment
+            source /etc/environment
+
+            #Edit spark-env.sh
+            cp conf/spark-env.sh.template conf/spark-env.sh
+            cat >> conf/spark-env.sh << EOF
+            export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_WORKER_CORES=8
+            EOF
+
+            #Add salves:
+            cp conf/slaves.template conf/slaves
+
+            #start spark cluster
+            sbin/start-all.sh
+            sleep 30
+            sed -i '47s%^%    counts.saveAsTextFiles("/tmp/results")\n%' examples/src/main/python/streaming/network_wordcount.py
+            bin/spark-submit examples/src/main/python/streaming/network_wordcount.py '__data_server_ip__' 6666
+
+  port_server1:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups:
+        - { get_resource: security_group }
+        - default
+  nova_server1:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: spark-2-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port_server1 }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+            __data_server_ip__: { get_attr: [data_server,first_address]  }   
+          template: |
+            #!/bin/sh
+            sudo su -
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            # NOte: in all the cluster nodes
+            sudo apt-get install -y python-software-properties
+            sudo add-apt-repository -y ppa:webupd8team/java
+            sudo apt-get update -y
+            echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+            sudo apt-get install -y oracle-java7-installer
+
+            # NOte in all the cluster nodes
+            sudo apt-get -y install scala
+            sudo apt-get install -y openssh-server openssh-client
+
+            # generate key pair
+            rm -rf ~/.ssh/id_rsa
+            ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+            cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+            #install spark
+            hostname=`hostname`
+            sudo sed -i "1s/^/127.0.0.1 $hostname \n /" /etc/hosts
+            cd /root/
+            wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz
+            tar xzvf spark-2.0.2-bin-hadoop2.7.tgz
+            cd spark-2.0.2-bin-hadoop2.7
+            export JAVA_HOME=JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_HOME=/root/spark-2.0.2-bin-hadoop2.7/
+            sudo echo "JAVA_HOME=/usr/lib/jvm/java-7-oracle" >> /etc/environment
+            source /etc/environment
+
+            #Edit spark-env.sh
+            cp conf/spark-env.sh.template conf/spark-env.sh
+            cat >> conf/spark-env.sh << EOF
+            export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_WORKER_CORES=8
+            EOF
+
+            #Add salves:
+            cp conf/slaves.template conf/slaves
+
+            #start spark cluster
+            sbin/start-all.sh
+            sleep 30
+            sed -i '47s%^%    counts.saveAsTextFiles("/tmp/results")\n%' examples/src/main/python/streaming/network_wordcount.py
+            bin/spark-submit examples/src/main/python/streaming/network_wordcount.py '__data_server_ip__' 7777 &
+
+  port_server2:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: network }
+      security_groups:
+        - { get_resource: security_group }
+        - default
+  nova_server2:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: spark-3-$NONCE
+          params:
+            $NONCE: { get_resource: name_nonce}
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: port_server2 }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __influx_ip__: { get_param: influx_ip }
+            __data_server_ip__: { get_attr: [data_server,first_address]  }
+          template: |
+            #!/bin/sh
+            sudo su -
+            sudo sed -i '1s/^/nameserver 8.8.8.8 /' /etc/resolv.conf
+            sudo apt-get -y update
+            sudo apt-get -y install git
+            wget https://dl.influxdata.com/telegraf/releases/telegraf_1.0.1_amd64.deb
+            sudo dpkg -i telegraf_1.0.1_amd64.deb
+            sudo apt-get install -f
+            telegraf config > /etc/telegraf/telegraf.conf
+            sed -i -e "s/localhost/__influx_ip__/g" /etc/telegraf/telegraf.conf
+            sed -i '$ a\'"[[inputs.net]]" /etc/telegraf/telegraf.conf
+            service telegraf restart
+            # NOte: in all the cluster nodes
+            sudo apt-get install -y python-software-properties
+            sudo add-apt-repository -y ppa:webupd8team/java
+            sudo apt-get update -y
+            echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+            sudo apt-get install -y oracle-java7-installer
+
+            # NOte in all the cluster nodes
+            sudo apt-get -y install scala
+            sudo apt-get install -y openssh-server openssh-client
+            sudo su
+            echo "generating key pair -------------------------------------------------------------"
+            # generate key pair
+            rm -rf ~/.ssh/id_rsa*
+            ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+            cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+
+            #install spark
+            hostname=`hostname`
+            sudo sed -i "1s/^/127.0.0.1 $hostname \n /" /etc/hosts
+            cd /root/
+            wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz
+            tar xzvf spark-2.0.2-bin-hadoop2.7.tgz
+            cd spark-2.0.2-bin-hadoop2.7
+            export JAVA_HOME=JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_HOME=/root/spark-2.0.2-bin-hadoop2.7/
+            sudo echo "JAVA_HOME=/usr/lib/jvm/java-7-oracle" >> /etc/environment
+            source /etc/environment
+
+            #Edit spark-env.sh
+            cp conf/spark-env.sh.template conf/spark-env.sh
+            cat >> conf/spark-env.sh << EOF
+            export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+            export SPARK_WORKER_CORES=8
+            EOF
+
+            #Add salves:
+            cp conf/slaves.template conf/slaves
+
+            #start spark cluster
+            sbin/start-all.sh
+            sleep 30
+            sed -i '47s%^%    counts.saveAsTextFiles("/tmp/results")\n%' examples/src/main/python/streaming/network_wordcount.py
+            bin/spark-submit examples/src/main/python/streaming/network_wordcount.py '__data_server_ip__' 8888 &
+
