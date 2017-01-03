@@ -1,10 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": 0827524b-9165-4a63-bb4c-a7025c7a5bf2
-  "image": b70fd709-dd3e-43e6-b03e-be32c8167e60
-  "availability_zone": nova
+  "flavor": lm.medium
+  "image": Ubuntulm14
+  "availability_zone": nova:compute03
   "size": 1
-  "network": bcc6e7ea-57a7-45ab-9eae-72b5aa46616c
+  "network": bc1b0934-3343-4fca-806e-3bad82205261
   "scaling_size": 1
-  "key_name": wload_key
-  "influx_ip": 172.99.106.164
+  "key_name": lm_key
+  "influx_ip": 172.22.8.23
