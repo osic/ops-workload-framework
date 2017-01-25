@@ -1,10 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": lm.large
-  "image": Ubuntulm14
-  "availability_zone": nova:compute01
+  "flavor": custom.workload.large
+  "image": image.large
+  "availability_zone": nova:kolla-5
   "size": 1
-  "network": bc1b0934-3343-4fca-806e-3bad82205261
+  "network": 6d36fd49-3593-4c3b-bd98-8849b8941a7d
   "scaling_size": 1
-  "key_name": lm_key
+  "key_name": wload_key
   "influx_ip": 172.22.8.23

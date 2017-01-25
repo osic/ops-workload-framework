@@ -1,0 +1,73 @@
+outputs:
+  host:
+    description: The host this server lives on.
+    value:
+      get_attr:
+      - nova_server
+      - show
+      - OS-EXT-SRV-ATTR:host
+heat_template_version: 2015-04-30
+description: A sample Workload.
+parameters:
+  network:
+    type: string
+    description: Network to be used for compute instance.
+    label: Network ID/Name
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+  key_name:
+    type: string
+    description: Key pair used to ssh into instance.
+  image:
+    label: Image ID
+    type: string
+    description: Image to be used for compute instance
+    constraints:
+    - custom_constraint: glance.image
+  size:
+    default: 1
+    type: number
+    description: Size of the volume to be created.
+  flavor:
+    label: Instance Type
+    type: string
+    description: Type of instance (flavor) to be used
+    constraints:
+    - custom_constraint: nova.flavor
+  influx_ip:
+    type: string
+    description: Ip address of the database of monitoring stack
+resources:
+  name_nonce:
+    type: OS::Heat::RandomString
+    properties:
+      length: 7
+      sequence: lowercase
+  nova_server:
+    type: OS::Nova::Server
+    properties:
+      user_data_format: RAW
+      name:
+        str_replace:
+          params:
+            $NONCE:
+              get_resource: name_nonce
+          template: workload-$NONCE
+      availability_zone:
+        get_param: availability_zone
+      key_name:
+        get_param: key_name
+      image:
+        get_param: image
+      user_data:
+        str_replace:
+          params:
+          template: "#!/bin/bash\nfor container in $(docker ps -a | grep swift | cut\
+            \ -d \" \" -f 1); do\n    docker stop $container\n    docker rm $container\n\
+            done\n"
+      flavor:
+        get_param: flavor
+      networks:
+      - network:
+          get_param: network

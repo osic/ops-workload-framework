@@ -35,7 +35,7 @@ def workload_define(slice, name, insecure, n, host, envt, group):
     else: validator=1
     if (validator == 1):
         print("Quota Validated")
-        template= "/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml"
+        template= "/opt/ops-workload-framework/heat_workload/slices/main/main-slice."+slice+".yaml"
 
         template_path = os.path.abspath(template)
 
@@ -61,26 +61,52 @@ def workload_define(slice, name, insecure, n, host, envt, group):
             replace(newline, pattern, env_path)
         if (insecure == "True"):
             if len(hostList) > 0:
+                count = 0
                 for host in hostList:
-                    newline = "  \"availability_zone\": " + "nova:" + host
-                    pattern = "  \"availability_zone\": "
-                    replace(newline,pattern,env_path)
-                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host + " --insecure"
-                    print(comm)
-                    os.system(comm)
+
+                    if ((os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED'] != '1') and count>0):
+                        print "Validating Quotas..."
+                        validator = quota_validate(n, flavor, slice)
+                    else:
+                        validator = 1
+                    if validator==1:
+                        newline = "  \"availability_zone\": " + "nova:" + host
+                        pattern = "  \"availability_zone\": "
+                        replace(newline,pattern,env_path)
+                        comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host + " --insecure"
+                        print(comm)
+                        os.system(comm)
+                        count=count+1
+                    elif validator == 0:
+                        print("Quota will exceed. Please reduce the number of slices")
+                    else:
+                        print("Delete one of the resources that are full")
             else:
                 comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name  + "." + host + " --insecure"
                 print(comm)
                 os.system(comm)
         else:
             if len(hostList) > 0:
+                count = 0
                 for host in hostList:
-                    newline = "  \"availability_zone\": " + "nova:" + host
-                    pattern = "  \"availability_zone\": "
-                    replace(newline,pattern,env_path)
-                    comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
-                    print(comm)
-                    os.system(comm)
+
+                    if ((os.getenv('QUOTA_CHECK_DISABLED') is None or os.environ['QUOTA_CHECK_DISABLED'] != '1') and count>0):
+                        print "Validating Quotas..."
+                        validator = quota_validate(n, flavor, slice)
+                    else:
+                        validator = 1
+                    if validator==1:
+                        newline = "  \"availability_zone\": " + "nova:" + host
+                        pattern = "  \"availability_zone\": "
+                        replace(newline,pattern,env_path)
+                        comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
+                        print(comm)
+                        os.system(comm)
+                        count=count+1
+                    elif validator == 0:
+                        print("Quota will exceed. Please reduce the number of slices")
+                    else:
+                        print("Delete one of the resources that are full")
             else:
                 comm = "openstack stack create -t " + template_path + " -e " + env_path + " " + name + "." + host
                 print(comm)
@@ -142,7 +168,7 @@ def scale_up(sf, name, insecure):
         print("Quota Validated")
         #envt = d.get(name)
 
-        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-slice."+slice+".yaml")
+        template_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/main/main-slice."+slice+".yaml")
         #env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/"+envt+".yaml")
         comm_1 = "openstack stack show " + name
         comm_url = comm_1 + " | grep \"output_value: \" | awk 'BEGIN{ FS=\"output_value: \"}{print $2}' | awk 'BEGIN{ FS=\" \|\"}{print $1}'"
@@ -211,11 +237,11 @@ def slice_create(name,main,envt):
     name = "slice."+name
     comm = "cat /opt/ops-workload-framework/heat_workload/templates/"+envt+".yaml > /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
     os.system(comm)
-    comm = "cat /opt/ops-workload-framework/heat_workload/templates/"+main+".yaml > /opt/ops-workload-framework/heat_workload/main-"+name+".yaml"
+    comm = "cat /opt/ops-workload-framework/heat_workload/templates/"+main+".yaml > /opt/ops-workload-framework/heat_workload/slices/main/main-"+name+".yaml"
     os.system(comm)
     newline = "        type: /opt/ops-workload-framework/heat_workload/slices/"+name+".yaml"
     pattern = "        type: OS::Nova::Server::Slice"
-    path = os.path.abspath("/opt/ops-workload-framework/heat_workload/main-" + name + ".yaml")
+    path = os.path.abspath("/opt/ops-workload-framework/heat_workload/slices/main/main-" + name + ".yaml")
     replace(newline,pattern,path)
     print "Slice Definition done..."
 
@@ -261,7 +287,7 @@ def slice_list():
 @click.option('--name', required=True,help="Name of slice to delete")
 def slice_destroy(name):
     del_slice = "rm /opt/ops-workload-framework/heat_workload/slices/slice."+name+".yaml"
-    del_main = "rm /opt/ops-workload-framework/heat_workload/main-slice."+name+".yaml"
+    del_main = "rm /opt/ops-workload-framework/heat_workload/slices/main/main-slice."+name+".yaml"
     os.system(del_slice)
     os.system(del_main)
     print "Deleted Slice: "+name
@@ -426,6 +452,27 @@ def delete_context(env_path):
     os.system(comm_del_image)
     os.system(comm_del_network)
     print("Context Deleted....")
+
+@workload_def.command('create-workload', help="Create workloads from script")
+@click.option('--path',type=str,required='True', help="Path to script")
+@click.option('--template', type=str, required='False', help="Path to Template used for creating workloads", default='main.yaml')
+@click.option('--name', type=str,required='True',help='Name of workload')
+def create_workload(path,template,name):
+    with open(path, 'r') as myscript:
+        data = myscript.read()
+    print data
+    myscript.close()
+    f=open(template)
+    stream=yaml.load(f)
+    stream['resources']['nova_server']['properties']['user_data']['str_replace']['template']=data
+    workload_file = '/opt/ops-workload-framework/heat_workload/resource_definition/'+name+'.yaml'
+    create_file = 'touch '+workload_file
+    os.system(create_file)
+    with open(workload_file, 'w') as f1:
+        yaml.dump(stream, f1, Dumper=yaml.RoundTripDumper)
+    f.close()
+    f1.close()
+
 
 
 @workload_def.command('create-context', help= "Create Context")
@@ -692,6 +739,8 @@ def quota_validate(slice_num,flavor,slice):
             return 0
     else:
         return 1
+
+
 
 
 def get_count(str):
