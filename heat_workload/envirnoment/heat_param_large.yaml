@@ -1,10 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": custom.workload.large
-  "image": image.large
-  "availability_zone": nova:kolla-5
+  "flavor": 42225d65-9d3a-41b7-8235-069a7ccdcee2
+  "image": ff0da074-d3ab-415f-932b-3ea819427985
+  "availability_zone": nova
   "size": 1
-  "network": 6d36fd49-3593-4c3b-bd98-8849b8941a7d
+  "network": f044f42e-66a2-485a-b5ec-ede32ca28144
   "scaling_size": 1
   "key_name": wload_key
   "influx_ip": 172.22.8.23

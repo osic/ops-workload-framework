@@ -431,27 +431,160 @@ def poll_update(name):
 
 
 @workload_def.command('destroy', help = "Delete workload and context")
-@click.option('--name', type=str, required=True, help="Name of the workload stack assigned during creation")
-@click.option('--type', type=str, required=True, help="Type of context to delete")
-def del_workload(name,type):
-    comm_del = "openstack stack delete " + name
-    os.system(comm_del)
-    time.sleep(120)
-    env_path = os.path.abspath("/opt/ops-workload-framework/heat_workload/envirnoment/heat_param_"+type+".yaml")
-    delete_context(env_path)
-    print("Workload " + name + " deleted...")
+@click.option('--context', required=False, default="N", help = "Delete context as well (Y/N)")
+def del_workload(context):
+    if "Y" in context:
+        delete_context()
+    else: print "Skipping context deletion..."
+    delete_server()
+    delete_stack()
+
+def delete_stack():
+    stack_list = getStackList()
+    for stack in stack_list:
+        if stack != '':
+            stack_id = check_stack(stack)
+            if stack_id != -1:
+                comm_delete = "openstack stack delete "+stack_id+" --yes"
+                os.system(comm_delete)
+                print "Deleted Stack: "+stack_id
+        else:
+            print "No stacks found. "
+
+def check_stack(stack_id):
+    comm_check = "openstack stack show "+stack_id+" -f shell | grep key | cut -d \":\" -f 2 "
+    key_name = subprocess.check_output(comm_check,shell=True).strip()
+    if "wload_key" in key_name:
+        return stack_id
+    else: return -1
 
 
-def delete_context(env_path):
-    stream = open(env_path, 'r')
-    data = yaml.load(stream)
-    comm_del_flavor = "openstack flavor delete " + data['parameters']['flavor']
-    comm_del_image = "openstack image delete " + data['parameters']['image']
-    comm_del_network = "openstack network delete " + data['parameters']['network']
-    os.system(comm_del_flavor)
-    os.system(comm_del_image)
-    os.system(comm_del_network)
+def getStackList():
+    comm_stack = "openstack stack list -c ID -f value"
+    comm_list = subprocess.check_output(comm_stack,shell=True).strip().split("\n")
+    return comm_list
+
+def delete_server():
+    server_list = getServerList()
+    for server in server_list:
+        if server != '':
+            server_id = check_server(server)
+            if server_id != -1:
+                comm_delete = "openstack server delete "+server_id
+                os.system(comm_delete)
+                print "Deleted Server: "+server_id
+        print "No servers found. "
+
+def check_server(server_id):
+    comm_check = "openstack server show "+server_id+" -f shell | grep key_name | cut -d \"=\" -f 2"
+    key_name = subprocess.check_output(comm_check,shell=True).replace("\"","")
+    if "wload_key" in key_name:
+        return server_id
+    else: return -1
+
+def getServerList():
+    comm_server = "openstack server list -c ID -f value"
+    comm_list = subprocess.check_output(comm_server,shell=True).strip().split("\n")
+    return comm_list
+
+def delete_context():
+    env_list = ["heat_param_large", "heat_param_medium", "heat_param_small", "heat_param_slice"]
+    for env in env_list:
+        delete_flavor("/opt/ops-workload-framework/heat_workload/envirnoment/"+env+".yaml")
+        delete_network("/opt/ops-workload-framework/heat_workload/envirnoment/"+env+".yaml")
+        delete_image("/opt/ops-workload-framework/heat_workload/envirnoment/"+env+".yaml")
+    #delete_servers()
+    #delete_stack()
+    #comm_del_flavor = "openstack flavor delete " + data['parameters']['flavor']
+    #comm_del_image = "openstack image delete " + data['parameters']['image']
+    #comm_del_network = "openstack network delete " + data['parameters']['network']
+    #os.system(comm_del_flavor)
+    #os.system(comm_del_image)
+    #os.system(comm_del_network)
     print("Context Deleted....")
+
+def delete_flavor(env_path):
+    f=open(env_path,'r')
+    stream = yaml.load(f)
+    comm_del_flavor = "openstack flavor delete "+ stream['parameters']['flavor']
+    os.system(comm_del_flavor)
+    print "Deleted Flavor: "+stream['parameters']['flavor']
+
+def delete_image(env_path):
+    f=open(env_path,'r')
+    stream = yaml.load(f)
+    comm_del_image = "openstack image delete "+ stream['parameters']['image']
+    os.system(comm_del_image)
+    print "Deleted Image: "+ stream['parameters']['image']
+
+def delete_network(env_path):
+    f = open(env_path, 'r')
+    stream = yaml.load(f)
+    network_id = stream['parameters']['network']
+    comm_check = "openstack router show router1.small"
+    try:
+        result_comm_check = subprocess.check_output(comm_check,shell=True)
+        delete_router()
+    except:
+        print "No router found"
+
+    comm_subnet = "neutron net-show "+network_id +" -f shell | grep \"subnets\" | cut -d \"=\" -f 2"
+    subnet_id = subprocess.check_output(comm_subnet,shell=True)
+    subnet_id = subnet_id.replace("\"","").strip()
+    delete_subnet(subnet_id)
+    comm_net_del = "openstack network delete "+network_id
+    os.system(comm_net_del)
+    print "Deleted Network: "+network_id
+
+def delete_subnet(subnet_id):
+    comm_port_check = "neutron port-list -c id -c fixed_ips -f value | grep  "+subnet_id+" | cut -d \" \" -f 1"
+    port_list = subprocess.check_output(comm_port_check,shell=True).split("\n")
+    if port_list != '':
+        for port in port_list[:-1]:
+            delete_port(port)
+    comm_subnet_del = "openstack subnet delete "+subnet_id
+    os.system(comm_subnet_del)
+    print "Deleted Subnet: "+subnet_id
+
+
+def delete_port(port_id):
+    comm_port_del = "openstack port delete "+port_id
+    os.system(comm_port_del)
+    print "Deleted Port "+port_id
+
+def delete_router():
+    router_list = ["router1.small","router1.medium","router1.large","router1.slice"]
+    for router in router_list:
+        router_id_list = get_list(router)
+        delete_router_port(router_id_list)
+        delete_router_id(router_id_list)
+
+def delete_router_port(router_id_list):
+    for id in router_id_list:
+        subnet_id = getSubnet(id)
+        if subnet_id != '':
+            comm_port = "neutron router-interface-delete "+id+" "+subnet_id
+            os.system(comm_port)
+            print comm_port
+    for id in router_id_list:
+        comm_gw = "neutron router-gateway-clear "+id
+        os.system(comm_gw)
+
+def getSubnet(router_id):
+    comm_subnet = "neutron router-port-list "+router_id+" -c fixed_ips -f value | awk 'BEGIN{ FS=\"\"subnet_id\":\"}{print $2}' | cut -d \",\" -f 1"
+    subnet_id = subprocess.check_output(comm_subnet,shell=True).strip()
+    return subnet_id
+
+def delete_router_id(router_id_list):
+    for id in router_id_list:
+        comm_del = "neutron router-delete "+id
+        os.system(comm_del)
+
+def get_list(router):
+    comm = "neutron router-list -f value | grep "+router+" | cut -d \" \" -f 1"
+    router_id = subprocess.check_output(comm,shell=True)
+    router_id_list = router_id.split("\n")
+    return router_id_list
 
 @workload_def.command('create-workload', help="Create workloads from script")
 @click.option('--path',type=str,required='True', help="Path to script")
@@ -476,7 +609,7 @@ def create_workload(path,template,name):
 
 
 @workload_def.command('create-context', help= "Create Context")
-@click.option('--ext',help="External Network ID/Name", required= True)
+@click.option('--ext',help="External Network ID/Name", required= False, default= '')
 def create_context(ext):
     types = ['small', 'medium', 'large', 'slice']
     for type in types:
@@ -620,20 +753,24 @@ def create_network(env_path,type,ext):
         newline = "  \"network\": " + net_id
         pattern = "  \"network\": "
         replace(newline, pattern, env_path)
-        comm = "neutron router-create router1."+type+" | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
-        router_id = subprocess.check_output(comm, shell=True)
-        router_id = router_id.strip()
-        router_gw = "neutron router-gateway-set "+router_id+" "+ext
-        os.system(router_gw)
-        router_int = "neutron router-interface-add "+router_id+" "+subnet_id
-        os.system(router_int)
-        print "Network: "+ net_id + " has the following external gateway "+ext
+        if ext != '':
+            create_router(ext,net_id,subnet_id,type)
     elif validator == 0:
         net_id = "Quota will exceed. Please delete one of the networks"
     else:
         net_id = "Delete one of the networks"
 
     return net_id
+
+def create_router(ext,net_id,subnet_id,type):
+    comm = "neutron router-create router1." + type + " | awk 'BEGIN{ FS=\" id\"}{print $2}' | awk 'BEGIN{ FS=\" \"}{print$2}'"
+    router_id = subprocess.check_output(comm, shell=True)
+    router_id = router_id.strip()
+    router_gw = "neutron router-gateway-set " + router_id + " " + ext
+    os.system(router_gw)
+    router_int = "neutron router-interface-add " + router_id + " " + subnet_id
+    os.system(router_int)
+    print "Network: " + net_id + " has the following external gateway " + ext
 
 
 def create_image(env_path, type):

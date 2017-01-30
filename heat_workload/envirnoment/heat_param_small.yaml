@@ -1,10 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": lm.small
-  "image": Ubuntulm14
-  "availability_zone": nova:compute04
+  "flavor": 7a620ce2-2460-4e3c-b8fc-a90b263ae9d0
+  "image": 0cff19d2-aae0-49d6-bb58-0e0324288936
+  "availability_zone": nova
   "size": 1
-  "network": bc1b0934-3343-4fca-806e-3bad82205261
+  "network": 836163e0-f481-454d-a238-b0f08772dc13
   "scaling_size": 1
-  "key_name": lm_key
+  "key_name": wload_key
   "influx_ip": 172.22.8.23

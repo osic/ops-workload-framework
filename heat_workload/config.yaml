@@ -19,7 +19,7 @@ slice:
   ram: 8192
   disk: 8
   vcpu: 8
-image_small: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
-image_medium: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
+image_small: "http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+image_medium: "http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
 image_large: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img"
 image_slice: "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img" 
