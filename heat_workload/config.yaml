@@ -1,3 +1,4 @@
+cpu_cores: 29
 cpu_load: 80
 ram_workers: 50
 ram_bytes: "250m"

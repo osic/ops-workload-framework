@@ -1,9 +1,9 @@
 parameters:
   "num_of_slices": 1
-  "flavor": 686eed94-9ec9-4bc3-9069-d86c3464d51f
-  "image": 4f9c2704-75f6-4d59-a567-65d934eec90f
+  "flavor": af24eb52-4804-4855-96c1-7ee03d7594c2
+  "image": 972a1896-998b-41c9-b017-1c320dbb87d6
   "availability_zone": nova:compute02
   "size": 1
-  "network": eb9b874e-9aab-4e6b-85b8-6d0ed371df35
+  "network": d8e2d068-4bab-4331-a9f2-a576ae1c5aae
   "scaling_size": 1
   "key_name": wload_key

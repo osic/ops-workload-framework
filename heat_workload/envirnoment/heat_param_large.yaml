@@ -1,10 +1,10 @@
 parameters:
   "num_of_slices": 1
-  "flavor": 42225d65-9d3a-41b7-8235-069a7ccdcee2
-  "image": ff0da074-d3ab-415f-932b-3ea819427985
+  "flavor": 6b8fd1eb-db90-4e3a-894c-be4808f26cf9
+  "image": 92461257-e28f-461b-90e2-67b66350b6b4
   "availability_zone": nova
   "size": 1
-  "network": f044f42e-66a2-485a-b5ec-ede32ca28144
+  "network": 51a0d469-2ca2-45fe-8af0-963537be0abf
   "scaling_size": 1
   "key_name": wload_key
   "influx_ip": 172.22.8.23

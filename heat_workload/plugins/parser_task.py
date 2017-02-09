@@ -1,6 +1,9 @@
 import yaml
 import sys
 import importlib
+sys.path.append("/opt/ops-workload-framework/heat_workload/tools/")
+from prettyoutput import Prettyoutput
+disp_list = []
 class parser_task():
     def __init__(self,name):
           self.file_name=name
@@ -15,4 +18,6 @@ class parser_task():
               new_module = importlib.import_module(class_name,pkg)
               mod=getattr(new_module,class_name)
               obj=mod() if value is None else mod(**value) 
-              obj.run()
+              disp_list = obj.run()
+              pretty_obj = Prettyoutput(disp_list)
+              pretty_obj.display()

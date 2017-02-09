@@ -376,7 +376,7 @@ def setConfig():
     config_data = getConfig()
     cpu = "/opt/ops-workload-framework/heat_workload/resource_definition/cpu.yaml"
     pattern = "            sudo stress-ng --cpu"
-    newline = "            sudo stress-ng --cpu 2 --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all -t 2147483647"
+    newline = "            sudo stress-ng --cpu "+ str(config_data['cpu_cores']) +" --cpu-load " + str(config_data['cpu_load']) + " --cpu-method all -t 2147483647"
     replace(newline,pattern,cpu)
     ram = "/opt/ops-workload-framework/heat_workload/resource_definition/ram.yaml"
     pattern = "            sudo stress-ng -m "
